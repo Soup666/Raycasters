@@ -11,7 +11,7 @@ BuildDirectory: /Users/saml/UniDayz/Projects/Raycaster/Basic/build
 CostDataFile: 
 
 # Site is something like machine.domain, i.e. pragmatic.crd
-Site: dyn199022.shef.ac.uk
+Site: dyn198237.shef.ac.uk
 
 # Build name is osname-revision-compiler, i.e. Linux-2.4.2-2smp-c++
 BuildName: Darwin-clang++
@@ -28,7 +28,7 @@ NightlyStartTime: 00:00:00 EDT
 
 # Commands for the build/test/submit cycle
 ConfigureCommand: "/Applications/CMake.app/Contents/bin/cmake" "/Users/saml/UniDayz/Projects/Raycaster/Basic"
-MakeCommand: /Applications/CMake.app/Contents/bin/cmake --build . --config "${CTEST_CONFIGURATION_TYPE}" -- -i
+MakeCommand: /Applications/CMake.app/Contents/bin/cmake --build . --config "${CTEST_CONFIGURATION_TYPE}"
 DefaultCTestConfigurationType: Release
 
 # version control

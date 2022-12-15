@@ -1,6 +1,6 @@
 #include <iostream>
 #include <SDL2/SDL.h>
-#include <SDL2_ttf/SDL_ttf.h>
+//#include <SDL2_ttf/SDL_ttf.h>
 #include <string>
 
 #define mapX  8      //map width
@@ -16,8 +16,7 @@
 
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
-TTF_Font* font;
-
+//TTF_Font* font;
 
 int frame = 0;
 
@@ -223,19 +222,19 @@ void drawRays() {
 
 }
 
-void renderText(std::string text, SDL_Rect dest) {
-	SDL_Color fg = { 0, 0, 0 };
-	SDL_Surface* surf = TTF_RenderText_Solid(font, text.c_str(), fg);
-
-	dest.w = 20;
-	dest.h = 20;
-
-	SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
-
-	SDL_RenderCopy(renderer, tex, NULL, &dest);
-	SDL_DestroyTexture(tex);
-	SDL_FreeSurface(surf);
-}
+//void renderText(std::string text, SDL_Rect dest) {
+//	SDL_Color fg = { 0, 0, 0 };
+//	SDL_Surface* surf = TTF_RenderText_Solid(font, text.c_str(), fg);
+//
+//	dest.w = 20;
+//	dest.h = 20;
+//
+//	SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+//
+//	SDL_RenderCopy(renderer, tex, NULL, &dest);
+//	SDL_DestroyTexture(tex);
+//	SDL_FreeSurface(surf);
+//}
 
 
 void display() {
@@ -314,12 +313,12 @@ int main () {
 		std::string perf = "Current Perf: " + std::to_string(framePerf);
 
 		// Display strings
-		SDL_Rect dest = { 10, 10, 0, 0 };
-		renderText(fps, dest);
-		dest.y += 24;
-		renderText(avg, dest);
-		dest.y += 24;
-		renderText(perf, dest);
+//		SDL_Rect dest = { 10, 10, 0, 0 };
+//		renderText(fps, dest);
+//		dest.y += 24;
+//		renderText(avg, dest);
+//		dest.y += 24;
+//		renderText(perf, dest);
 
         SDL_RenderPresent(renderer);
 
