@@ -1,6 +1,6 @@
 #include <iostream>
-#include <SDL2/SDL.h>
-#include <SDL2_ttf/SDL_ttf.h>
+#include "SDL/SDL.h"
+#include "SDL/SDL_ttf.h"
 #include <string>
 
 #define mapX  8      //map width
@@ -17,7 +17,6 @@
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 TTF_Font* font;
-
 
 int frame = 0;
 
@@ -224,11 +223,11 @@ void drawRays() {
 }
 
 void renderText(std::string text, SDL_Rect dest) {
-	SDL_Color fg = { 0, 0, 0 };
+	SDL_Color fg = {255, 255, 255, 0};
 	SDL_Surface* surf = TTF_RenderText_Solid(font, text.c_str(), fg);
 
-	dest.w = 20;
-	dest.h = 20;
+	dest.w = surf->w;
+	dest.h = surf->h;
 
 	SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
 
@@ -250,6 +249,14 @@ void display() {
 
 int main () {
 
+    TTF_Init();
+    font = TTF_OpenFont("./FreeSans.ttf", 24);
+
+    if (font == NULL) {
+        fprintf(stderr, "error: font not found\n");
+        exit(EXIT_FAILURE);
+    }
+
 	Uint32 totalFrameTicks = 0;
 	Uint32 totalFrames = 0;
     // Simple SDL Screen
@@ -265,7 +272,7 @@ int main () {
         
 		// Start frame timing
 		totalFrames++;
-		Uint32 startTicks = SDL_GetTicks();
+		Uint32 startTicks = SDL_GetTicks64();
 		Uint64 startPerf = SDL_GetPerformanceCounter();
 
         SDL_Event event;
@@ -302,7 +309,7 @@ int main () {
         display();
 
         // End frame timing
-		Uint32 endTicks = SDL_GetTicks();
+		Uint64 endTicks = SDL_GetTicks64();
 		Uint64 endPerf = SDL_GetPerformanceCounter();
 		Uint64 framePerf = endPerf - startPerf;
 		float frameTime = (endTicks - startTicks) / 1000.0f;
@@ -316,9 +323,9 @@ int main () {
 		// Display strings
 		SDL_Rect dest = { 10, 10, 0, 0 };
 		renderText(fps, dest);
-		dest.y += 24;
+		dest.y += 40;
 		renderText(avg, dest);
-		dest.y += 24;
+		dest.y += 40;
 		renderText(perf, dest);
 
         SDL_RenderPresent(renderer);
