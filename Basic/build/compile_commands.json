@@ -1,7 +1,0 @@
-[
-{
-  "directory": "/Users/saml/UniDayz/Projects/Raycaster/Basic/build",
-  "command": "/usr/bin/clang++ -I/usr/local/include -I/usr/local/include/SDL2 -I/Library/Frameworks/SDL2_ttf.framework/Headers -I/Users/saml/UniDayz/Projects/Raycaster/Basic/MyProject -isystem /Library/Frameworks/SDL2.framework/Headers -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -F/Library/Frameworks  -F /Library/Frameworks/ -o CMakeFiles/Basic.dir/main.cpp.o -c /Users/saml/UniDayz/Projects/Raycaster/Basic/main.cpp",
-  "file": "/Users/saml/UniDayz/Projects/Raycaster/Basic/main.cpp"
-}
-]

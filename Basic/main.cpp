@@ -12,7 +12,7 @@
 #define PI 3.14159265
 #define PLAYER_WIDTH 5
 #define PRAY 50
-#define PLAYER_SPEED 1
+#define PLAYER_SPEED 2
 
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
@@ -126,7 +126,6 @@ void drawRays() {
         ra = fixAngle(pa-30+i);
         // std::cout << i << " " << ra << std::endl;
 
-        SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
 
         dof = 0;
         // Horizontal Lines
@@ -150,7 +149,7 @@ void drawRays() {
             mx = floor(rx / mapS);
             my = floor(ry / mapS);
 
-            if (mx >= mapX || my >= mapY || my < 0 || mx < 0) { break; }
+            if (mx >= mapX || my >= mapY || my < 0 || mx < 0 || ( mx == 0 && my == 0)) { break; }
             if (map[mx+(my*mapY)] != 0) { 
                 hx = rx; hy = ry; 
                 break; 
@@ -178,13 +177,12 @@ void drawRays() {
             SDL_Rect rect = {rx, ry, 5, 5};
             SDL_RenderFillRect(renderer, &rect);
 
-
             int mx, my;
 
             mx = rx >> 6;
             my = ry >> 6;
 
-            if (mx >= mapX || my >= mapY || my < 0 || mx < 0) { break; }
+            if (mx >= mapX || my >= mapY || my < 0 || mx < 0 || ( mx == 0 && my == 0)) { break; }
             if (map[mx+(my*mapY)] != 0) { 
                 vx = rx; vy = ry; 
                 break; }
@@ -301,12 +299,12 @@ int main () {
             }
         }
 
-        if(A){ pa+=1; pa = fixAngle(pa); pdx=cos(degToRad(pa)); pdy=-sin(degToRad(pa));} 	
-        if(D){ pa-=1; pa = fixAngle(pa); pdx=cos(degToRad(pa)); pdy=-sin(degToRad(pa));} 
-        if(W){ px+=pdx*PLAYER_SPEED; py+=pdy*PLAYER_SPEED;}
-        if(S){ px-=pdx*PLAYER_SPEED; py-=pdy*PLAYER_SPEED;}
+        if(A){ pa+=2; pa = fixAngle(pa); pdx=cos(degToRad(pa)); pdy=-sin(degToRad(pa));} 	
+        if(D){ pa-=2; pa = fixAngle(pa); pdx=cos(degToRad(pa)); pdy=-sin(degToRad(pa));} 
+        if(W){ px+=pdx*PLAYER_SPEED; py+=pdy*PLAYER_SPEED; }
+        if(S){ px-=pdx*PLAYER_SPEED; py-=pdy*PLAYER_SPEED; }
 
-        display();
+        display(); // Display Frame
 
         // End frame timing
 		Uint64 endTicks = SDL_GetTicks64();

@@ -8,7 +8,7 @@
             "name": "(lldb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Basic",
+            "program": "${workspaceFolder}/build.sh",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
