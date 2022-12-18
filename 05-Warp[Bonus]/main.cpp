@@ -20,7 +20,7 @@
 #define SCREEN_FPS 60
 #define SCREEN_TICKS_PER_FRAME 1000 / SCREEN_FPS
 #define DOF 16
-#define RAYCOUNT 60
+#define RAYCOUNT 120
 
 // ---------------------------------------------- Variables ----------------------------------------------
 
@@ -91,7 +91,7 @@ int radToDeg(double angle) {
     return angle * (180/PI);
 }
 
-int fixAngle(int angle) {
+double fixAngle(double angle) {
     if (angle > 359) {
         angle -= 360;
     }
@@ -153,12 +153,12 @@ void drawRays()
     SDL_Rect rect2 = {WINDOW_WIDTH, WINDOW_HEIGHT / 2, WINDOW_WIDTH*2, WINDOW_HEIGHT / 2};
     SDL_RenderFillRect(renderer, &rect2);
 	
-    int r,mx,my,mp,dof,side; float vx,vy,rx,ry,ra,xo,yo,disV,disH; 
+    int mx,my,mp,dof,side; float vx,vy,rx,ry,ra,xo,yo,disV,disH; 
  
     ra=fixAngle(pa+30); //ray set back 30 degrees
  
     int rayCount = 0;
-    for(r = 0; r<WINDOW_WIDTH; r += WINDOW_WIDTH / RAYCOUNT)
+    for(double r = 0; r<RAYCOUNT; r++)
     {
 
         //---Vertical--- 
@@ -224,13 +224,23 @@ void drawRays()
         int lineH = (mapS * WINDOW_HEIGHT) / (disH); if(lineH > WINDOW_HEIGHT){ lineH = WINDOW_HEIGHT;} //line height and limit
         int lineOff = (WINDOW_HEIGHT / 2) - (lineH>>1);                                                     //line offset
         
-        SDL_Rect rect3 = { 
-            (WINDOW_WIDTH) + (2*(rayCount * (WINDOW_WIDTH / RAYCOUNT))), 
-            ((player_speed-1)*2*sin(frameCount)) + lineOff, 
-            (2*(WINDOW_WIDTH / RAYCOUNT)), 
-            lineH
-        };
-        SDL_RenderFillRect(renderer, &rect3);
+        for (double y = 0.0; y <= lineH; y += (lineH / (float)textureSize)) {
+            SDL_SetRenderDrawColor(renderer, wallCol[0],wallCol[1] * ((255 / y+1.0) * 255),wallCol[2],wallCol[3]);
+            SDL_Rect wall_pixel = { 
+                (WINDOW_WIDTH) + (rayCount * ((WINDOW_WIDTH*2) / RAYCOUNT)), 
+                lineOff + y + ((player_speed-1)*2*sin(frameCount)), 
+                ((WINDOW_WIDTH*2) / RAYCOUNT), 
+                lineH / (float)textureSize
+            };
+            SDL_RenderFillRect(renderer, &wall_pixel);
+        }
+        // SDL_Rect rect3 = { 
+        //     (WINDOW_WIDTH) + (rayCount * ((WINDOW_WIDTH*2) / RAYCOUNT)), 
+        //     ((player_speed-1)*2*sin(frameCount)) + lineOff, 
+        //     ((WINDOW_WIDTH*2) / RAYCOUNT), 
+        //     lineH
+        // };
+        // SDL_RenderFillRect(renderer, &rect3);
 
         // int count = 0;
         // int verticalSubset = 16;
@@ -245,8 +255,9 @@ void drawRays()
         // }
 
         rayCount++;
-        ra=fixAngle(ra-(60 / RAYCOUNT)); //go to next ray
+        ra=fixAngle(ra-(60.0 / RAYCOUNT)); //go to next ray
     }
+    exit;
 }
 
 void renderText(std::string text, SDL_Rect dest) {
