@@ -1,1 +1,1 @@
-g++ main.cpp -I/usr/local/include -D_THREAD_SAFE -L/usr/local/lib -lSDL2 -lSDL2_ttf -lSDL2_image -lSDL2main -std=c++11 && ./a.out
+g++ main.cpp LTimer.cpp -I/usr/local/include -D_THREAD_SAFE -L/usr/local/lib -lSDL2 -lSDL2_ttf -lSDL2_image -lSDL2main -std=c++11 && ./a.out
