@@ -1,7 +1,9 @@
 
-#include "LTimer.h"
+// Version: 1.0
+// LTime.h
+// Taken from https://lazyfoo.net/tutorials/SDL/index.php#Advanced%20Timers
 
-// ---------------------------------------------- Timer ----------------------------------------------
+#include "LTimer.h"
 
 LTimer::LTimer()
 {

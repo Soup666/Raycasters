@@ -1,3 +1,6 @@
+
+// ---------------------------------------------- Includes ----------------------------------------------
+
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
@@ -19,6 +22,8 @@
 #define SCREEN_TICKS_PER_FRAME 1000 / SCREEN_FPS
 #define DOF 16
 #define RAYCOUNT 60
+
+// ---------------------------------------------- Variables ----------------------------------------------
 
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
@@ -64,8 +69,6 @@ int map[] = {
 
 
 
-// ---------------------------------------------- Main ----------------------------------------------
-
 double px = WINDOW_HEIGHT/2,
     py = WINDOW_HEIGHT/2,
     pa = 90,
@@ -73,6 +76,7 @@ double px = WINDOW_HEIGHT/2,
     pdy = 0,
     pdt = 0.;
 
+// ---------------------------------------------- Functions ----------------------------------------------
 
 double degToRad(int angle) {
     return angle * (PI/180);
@@ -249,7 +253,6 @@ void renderText(std::string text, SDL_Rect dest) {
 	SDL_FreeSurface(surf);
 }
 
-
 void display() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
@@ -260,6 +263,7 @@ void display() {
 
 }
 
+// ---------------------------------------------- Main ----------------------------------------------
 
 int main () {
 
