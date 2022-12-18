@@ -20,7 +20,7 @@
 #define SCREEN_FPS 60
 #define SCREEN_TICKS_PER_FRAME 1000 / SCREEN_FPS
 #define DOF 16
-#define RAYCOUNT 120
+#define RAYCOUNT 240
 
 // ---------------------------------------------- Variables ----------------------------------------------
 
@@ -236,7 +236,7 @@ void drawRays()
             SDL_Rect wall_pixel = { 
                 (WINDOW_WIDTH) + (rayCount * ((WINDOW_WIDTH*2) / RAYCOUNT)), 
                 lineOff + y + ((player_speed-1)*2*sin(frameCount)), 
-                ((WINDOW_WIDTH*2) / RAYCOUNT), 
+                ((WINDOW_WIDTH*2) / (RAYCOUNT*2)), 
                 (lineH / (float)textureSize) + 1
             };
             SDL_RenderFillRect(renderer, &wall_pixel);
