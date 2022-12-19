@@ -170,7 +170,7 @@ void drawRays()
     ra=fixAngle(pa+30); //ray set back 30 degrees
  
     int rayCount = 0;
-    for(double r = 0; r<RAYCOUNT; r++)
+    for(double r = 0; r<=RAYCOUNT; r++)
     {
 
         //---Vertical--- 
@@ -278,78 +278,6 @@ void drawRays()
     }
 }
 
-void floorRays() {
-        //FLOOR CASTING
-
-    double posX = (int)px >> 5, posY = (int)py >> 5;  //x and y start position
-    double dirX = cos(degToRad(pa)), dirY = sin(degToRad(pa)); //initial direction vector
-    double planeX = 0.0, planeY = 0.66; //the 2d raycaster version of camera plane
-    for(int y = 0; y < WINDOW_HEIGHT/2; y++)
-    {
-
-
-      // rayDir for leftmost ray (x = 0) and rightmost ray (x = w)
-      float rayDirX0 = dirX - planeX;
-      float rayDirY0 = dirY - planeY;
-      float rayDirX1 = dirX + planeX;
-      float rayDirY1 = dirY + planeY;
-
-      // Current y position compared to the center of the screen (the horizon)
-      int p = y - WINDOW_HEIGHT / 2;
-
-      // Vertical position of the camera.
-      float posZ = 0.5 * WINDOW_HEIGHT;
-
-      // Horizontal distance from the camera to the floor for the current row.
-      // 0.5 is the z position exactly in the middle between floor and ceiling.
-      float rowDistance = posZ / p;
-
-      // calculate the real world step vector we have to add for each x (parallel to camera plane)
-      // adding step by step avoids multiplications with a weight in the inner loop
-      float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / WINDOW_WIDTH;
-      float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / WINDOW_WIDTH;
-
-      // real world coordinates of the leftmost column. This will be updated as we step to the right.
-      float floorX = posX + rowDistance * rayDirX0;
-      float floorY = posY + rowDistance * rayDirY0;
-
-      for(int x = 0; x < WINDOW_WIDTH*2; ++x)
-      {
-        // the cell coord is simply got from the integer parts of floorX and floorY
-        int cellX = (int)(floorX);
-        int cellY = (int)(floorY);
-
-        // get the texture coordinate from the fractional part
-        int tx = (int)(16 * (floorX - cellX)) & (16 - 1);
-        int ty = (int)(16 * (floorY - cellY)) & (16 - 1);
-
-        floorX += floorStepX;
-        floorY += floorStepY;
-
-        // choose texture and draw the pixel
-        int floorTexture = 3;
-        int ceilingTexture = 6;
-        Uint32 color;
-
-        // floor
-        // color = texture[floorTexture][texWidth * ty + tx];
-        // color = (color >> 1) & 8355711; // make a bit darker
-        // buffer[y][x] = color;
-
-        //ceiling (symmetrical, at screenHeight - y - 1 instead of y)
-        // color = texture[ceilingTexture][texWidth * ty + tx];
-        // color = (color >> 1) & 8355711; // make a bit darker
-        // buffer[screenHeight - y - 1][x] = color;
-
-        SDL_SetRenderDrawColor(renderer, floorArr[16 * ty + tx] * 255, 0, 0, 255);
-        // SDL_SetRenderDrawColor(renderer, tx * 10, ty * 10, 0, 255);
-        SDL_RenderDrawPoint(renderer, WINDOW_WIDTH + x, WINDOW_HEIGHT - y - 1);
-        // SDL_RenderDrawPoint(renderer, WINDOW_WIDTH + x, y);
-      }
-    }
-
-}
-
 void renderText(std::string text, SDL_Rect dest) {
 	SDL_Color fg = {255, 255, 255, 0};
 	SDL_Surface* surf = TTF_RenderText_Solid(font, text.c_str(), fg);
@@ -378,7 +306,6 @@ void display() {
     SDL_RenderFillRect(renderer, &rect2);
 
     drawMap();
-    floorRays();
     drawRays();
     drawPlayer();
 
