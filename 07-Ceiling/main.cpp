@@ -20,7 +20,7 @@
 #define SCREEN_FPS 60
 #define SCREEN_TICKS_PER_FRAME 1000 / SCREEN_FPS
 #define DOF 16
-#define RAYCOUNT 60
+#define RAYCOUNT 160
 #define DEBUG 0
 
 // ---------------------------------------------- Variables ----------------------------------------------
@@ -61,29 +61,29 @@ int map[] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 };
 
-int floorArr[] = {
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+int wallArr[] = {
+    1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,
+    1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,
+    1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,
+    1,1,1,1,1,1,0,0,1,1,0,0,1,1,0,0,
+    1,1,1,1,1,1,0,0,1,1,0,0,1,1,0,0,
+    1,1,0,0,1,1,1,1,1,1,0,0,1,1,0,0,
+    1,1,0,0,1,1,1,1,1,1,0,0,1,1,0,0,
+    1,1,0,0,1,1,0,0,1,1,1,1,1,1,0,0,
+    1,1,0,0,1,1,0,0,1,1,1,1,1,1,0,0,
+    1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,
+    1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,
+    1,1,0,0,1,1,0,0,1,1,0,0,1,1,1,1,
+    1,1,0,0,1,1,0,0,1,1,0,0,1,1,1,1,
+    1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,
+    1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,
+    1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0
 };
 
 
 double px = WINDOW_HEIGHT/2,
     py = WINDOW_HEIGHT/2,
-    pa = 90,
+    pa = 45,
     pdx = 0,
     pdy = 0,
     pdt = 0,
@@ -91,11 +91,11 @@ double px = WINDOW_HEIGHT/2,
 
 // ---------------------------------------------- Functions ----------------------------------------------
 
-double degToRad(int angle) {
+double degToRad(double angle) {
     return angle * (PI/180);
 }
 
-int radToDeg(double angle) {
+double radToDeg(double angle) {
     return angle * (180/PI);
 }
 
@@ -159,7 +159,7 @@ void drawRays()
     ra=fixAngle(pa+30); //ray set back 30 degrees
  
     int rayCount = 0;
-    for(double r = 0; r<=RAYCOUNT; r++)
+    for(int r = 0; r<=RAYCOUNT; r++)
     {
 
         //---Vertical--- 
@@ -210,33 +210,47 @@ void drawRays()
             pixelX = (int)rx % 64;
         }
         
-        float normalizedPixelX = (float)(pixelX) / (64);
-            
+        // int normalizedPixelX = ((int)pixelX >> 6) << 6;
+            // 15360
         int ca=fixAngle(pa-ra); disH=disH*cos(degToRad(ca));                                                    //fix fisheye 
-        int lineH = (mapS * WINDOW_HEIGHT) / (disH); if(lineH > WINDOW_HEIGHT){ lineH = WINDOW_HEIGHT;} //line height and limit
-        int lineOff = (WINDOW_HEIGHT / 2) - (lineH>>1);                                                     //line offset
+        double lineH = (mapS * WINDOW_HEIGHT) / (disH); if(lineH > WINDOW_HEIGHT){ lineH = WINDOW_HEIGHT;} //line height and limit
+        double lineOff = (WINDOW_HEIGHT / 2) - (lineH / 2);                                                     //line offset
         
-        for (double y = 0.0; y <= lineH; y += (lineH / (float)textureSize)) {
-            int brightness = y; if (brightness > 255) brightness = 255;
-            SDL_SetRenderDrawColor(renderer, wallCol[0], brightness,wallCol[2],wallCol[3]);
-            if (normalizedPixelX < 0.1) {
-                SDL_SetRenderDrawColor(renderer, 0, 25 * (brightness / 255), 0, 255);
-            }
-            if (y > lineH-(lineH / (float)textureSize)) {
-                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-            }
+        int pYIndex = 0;
+        double pixelHeight = (lineH / 16.0);
+
+        for (double y = 0.0; y < lineH; y += pixelHeight) { // Y is pixel count height
+            int brightness = 255-(disH / 2); if (brightness > 255) brightness = 255; if (brightness < 0) brightness = 0; // y is the height of the line drawn. so biger = closer
+            SDL_SetRenderDrawColor(renderer, wallCol[0], brightness, wallCol[2], wallCol[3]);
+            // if (normalizedPixelX <= 10) {
+            //     SDL_SetRenderDrawColor(renderer, 0, 25 * (brightness / 255), 0, 255);
+            // }
+            // SDL_SetRenderDrawColor(renderer, 0, 255*, 0, 255);
+            // if (y > lineH-(lineH / (float)textureSize)) {
+            //     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Bottom Border
+            // }
+            SDL_SetRenderDrawColor(renderer, 0, (255*(wallArr[(pYIndex++*16)+(int)(((double)pixelX / 16.0)*4)]) / 255) * brightness, 0, 255); 
+
+            int bobbingAmount = ((player_speed-1)*2*sin(frameCount));
+            int segmentOff = (int)y;
+
+            int lineWidth = WINDOW_WIDTH / RAYCOUNT;
+
             SDL_Rect wall_pixel = { 
-                (rayCount * ((WINDOW_WIDTH) / RAYCOUNT)), 
-                lineOff + y + ((player_speed-1)*2*sin(frameCount)), 
-                ((WINDOW_WIDTH) / (RAYCOUNT)), 
-                (lineH / (float)textureSize) + 1
+                (rayCount * (lineWidth)), 
+                (int)(lineOff) + segmentOff + bobbingAmount, 
+                lineWidth, 
+                (int)pixelHeight + 1
             };
             SDL_RenderFillRect(renderer, &wall_pixel);
         }
 
         rayCount++;
+        // std::cout << disH << " - " << lineH << std::endl;
         ra=fixAngle(ra-(60.0 / RAYCOUNT)); //go to next ray
     }
+
+    // std::cout << "a" << std::endl;
 }
 
 void renderText(std::string text, SDL_Rect dest) {
@@ -280,7 +294,7 @@ void display() {
 int main () {
 
     TTF_Init();
-    font = TTF_OpenFont("./FreeSans.ttf", 24);
+    font = TTF_OpenFont("./assets/FreeSans.ttf", 24);
 
 
     LTimer fpsTimer;
