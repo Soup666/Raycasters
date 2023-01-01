@@ -6,7 +6,10 @@
 #include <SDL2/SDL_ttf.h>
 #include <string>
 #include <sstream>
+#include <vector>
+#include <cmath>
 #include "src/LTimer.h"
+#include "src/LTexture.h"
 
 #define mapX  16      //map width
 #define mapY  16      //map height
@@ -20,8 +23,10 @@
 #define SCREEN_FPS 60
 #define SCREEN_TICKS_PER_FRAME 1000 / SCREEN_FPS
 #define DOF 16
-#define RAYCOUNT 160
+#define RAYCOUNT 640
 #define DEBUG 0
+#define texWidth 64
+#define texHeight 64
 
 // ---------------------------------------------- Variables ----------------------------------------------
 
@@ -33,6 +38,8 @@ TTF_Font* font;
 Uint32 totalFrameTicks = 0;
 Uint32 frameCount = 0;
 
+std::vector<uint32_t> texture[8];
+
 int frame = 0;
 int player_speed = 1;
 
@@ -43,7 +50,7 @@ bool A = false,
 
 
 int map[] = {
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    1,1,1,1,1,2,3,4,5,6,7,1,1,1,1,1,
     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
@@ -60,26 +67,6 @@ int map[] = {
     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 };
-
-int wallArr[] = {
-    1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,
-    1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,
-    1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,
-    1,1,1,1,1,1,0,0,1,1,0,0,1,1,0,0,
-    1,1,1,1,1,1,0,0,1,1,0,0,1,1,0,0,
-    1,1,0,0,1,1,1,1,1,1,0,0,1,1,0,0,
-    1,1,0,0,1,1,1,1,1,1,0,0,1,1,0,0,
-    1,1,0,0,1,1,0,0,1,1,1,1,1,1,0,0,
-    1,1,0,0,1,1,0,0,1,1,1,1,1,1,0,0,
-    1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,
-    1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,
-    1,1,0,0,1,1,0,0,1,1,0,0,1,1,1,1,
-    1,1,0,0,1,1,0,0,1,1,0,0,1,1,1,1,
-    1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,
-    1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,
-    1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0
-};
-
 
 double px = WINDOW_HEIGHT/2,
     py = WINDOW_HEIGHT/2,
@@ -107,6 +94,26 @@ double fixAngle(double angle) {
         angle += 360;
     }
     return angle;
+}
+
+void generateTextures(std::vector<uint32_t> texture[]) {
+    //generate some textures
+  for(int x = 0; x < texWidth; x++)
+  for(int y = 0; y < texHeight; y++)
+  {
+    int xorcolor = (x * 256 / texWidth) ^ (y * 256 / texHeight);
+    //int xcolor = x * 256 / texWidth;
+    int ycolor = y * 256 / texHeight;
+    int xycolor = y * 128 / texHeight + x * 128 / texWidth;
+    texture[0][texWidth * y + x] = 65536 * 254 * (x != y && x != texWidth - y); //flat red texture with black cross
+    texture[1][texWidth * y + x] = xycolor + 256 * xycolor + 65536 * xycolor; //sloped greyscale
+    texture[2][texWidth * y + x] = 256 * xycolor + 65536 * xycolor; //sloped yellow gradient
+    texture[3][texWidth * y + x] = xorcolor + 256 * xorcolor + 65536 * xorcolor; //xor greyscale
+    texture[4][texWidth * y + x] = 256 * xorcolor; //xor green
+    texture[5][texWidth * y + x] = 65536 * 192 * (x % 16 && y % 16); //red bricks
+    texture[6][texWidth * y + x] = 65536 * ycolor; //red gradient
+    texture[7][texWidth * y + x] = 128 + 256 * 128 + 65536 * 128; //flat grey texture
+  }
 }
 
 void drawMap() {
@@ -165,6 +172,7 @@ void drawRays()
         //---Vertical--- 
         dof=0; side=0; disV=100000;
         float Tan=tan(degToRad(ra));
+        int mapH, mapV;
 
         if     (cos(degToRad(ra))> 0.001){ rx=(((int)px>>5)<<5)+mapS;      ry=(px-rx)*Tan+py; xo= mapS; yo=-xo*Tan;} //looking left
         else if(cos(degToRad(ra))<-0.001){ rx=(((int)px>>5)<<5) -0.0001; ry=(px-rx)*Tan+py; xo=-mapS; yo=-xo*Tan;} //looking right
@@ -173,7 +181,7 @@ void drawRays()
         while(dof<DOF) 
         { 
             mx=(int)(rx)>>5; my=(int)(ry)>>5; mp=my*mapX+mx;                     
-            if(mp>0 && mp<mapX*mapY && map[mp]==1){ dof=DOF; disV=cos(degToRad(ra))*(rx-px)-sin(degToRad(ra))*(ry-py);} //hit         
+            if(mp>0 && mp<mapX*mapY && map[mp]!=0){ dof=DOF; disV=cos(degToRad(ra))*(rx-px)-sin(degToRad(ra))*(ry-py); mapV = map[mp]; } //hit         
             else{ rx+=xo; ry+=yo; dof+=1;}                                                                            //check next horizontal
         } 
         vx=rx; vy=ry;
@@ -190,60 +198,72 @@ void drawRays()
         while(dof<DOF) 
         { 
             mx=(int)(rx)>>5; my=(int)(ry)>>5; mp=my*mapX+mx;                          
-            if(mp>0 && mp<mapX*mapY && map[mp]==1){ dof=DOF; disH=cos(degToRad(ra))*(rx-px)-sin(degToRad(ra))*(ry-py);} //hit         
+            if(mp>0 && mp<mapX*mapY && map[mp]!=0){ dof=DOF; disH=cos(degToRad(ra))*(rx-px)-sin(degToRad(ra))*(ry-py); mapH = map[mp]; } //hit         
             else{ rx+=xo; ry+=yo; dof+=1;}                                                                            //check next horizontal
         } 
         
         int pixelX;
-        int textureSize = 16;
-        int wallCol[4] = {0,200,0,255};
+        int mapValue;
 
         if(disV<disH){ // Looking at Vertical
             rx=vx; 
             ry=vy; 
             disH=disV; 
+            mapValue = mapV;
             
-            pixelX = (int)ry % 64;
+            pixelX = (int)ry % 64; // Needs improving, slow
 
         }   //horizontal hit first
         else {
             pixelX = (int)rx % 64;
+            mapValue = mapH;
         }
         
-        // int normalizedPixelX = ((int)pixelX >> 6) << 6;
-            // 15360
         int ca=fixAngle(pa-ra); disH=disH*cos(degToRad(ca));                                                    //fix fisheye 
-        double lineH = (mapS * WINDOW_HEIGHT) / (disH); if(lineH > WINDOW_HEIGHT){ lineH = WINDOW_HEIGHT;} //line height and limit
+        double lineH = (mapS * WINDOW_HEIGHT) / (disH); if(lineH > WINDOW_HEIGHT){ lineH = WINDOW_HEIGHT;}      //line height and limit
         double lineOff = (WINDOW_HEIGHT / 2) - (lineH / 2);                                                     //line offset
-        
-        int pYIndex = 0;
-        double pixelHeight = (lineH / 16.0);
+        double tStep = 1.0 * texHeight / lineH;                                                                 //texture step
+        u_int8_t cr,cg,cb;
 
-        for (double y = 0.0; y < lineH; y += pixelHeight) { // Y is pixel count height
-            int brightness = 255-(disH / 2); if (brightness > 255) brightness = 255; if (brightness < 0) brightness = 0; // y is the height of the line drawn. so biger = closer
-            SDL_SetRenderDrawColor(renderer, wallCol[0], brightness, wallCol[2], wallCol[3]);
-            // if (normalizedPixelX <= 10) {
-            //     SDL_SetRenderDrawColor(renderer, 0, 25 * (brightness / 255), 0, 255);
-            // }
-            // SDL_SetRenderDrawColor(renderer, 0, 255*, 0, 255);
-            // if (y > lineH-(lineH / (float)textureSize)) {
-            //     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Bottom Border
-            // }
-            SDL_SetRenderDrawColor(renderer, 0, (255*(wallArr[(pYIndex++*16)+(int)(((double)pixelX / 16.0)*4)]) / 255) * brightness, 0, 255); 
+        for (int pyo = 0; pyo < lineH; pyo++) {
+            int texPos = (pixelX * 64) + (tStep * pyo); if (texPos > 4095) texPos = 4095; // Cap the index for the texture just incase
+            double brightness = (1/disH) * 100; if (brightness > 1) brightness = 1; // Fog value here
+            cr = texture[mapValue][texPos] >> 24 & 0xFF; // color is stored as 32 bit int, with first 3 bytes being r,g,b and the 4th being extra. we can shift and AND to split it
+            cg = texture[mapValue][texPos] >> 16 & 0xFF;
+            cb = texture[mapValue][texPos] >> 8 & 0xFF;
 
-            int bobbingAmount = ((player_speed-1)*2*sin(frameCount));
-            int segmentOff = (int)y;
-
-            int lineWidth = WINDOW_WIDTH / RAYCOUNT;
-
-            SDL_Rect wall_pixel = { 
-                (rayCount * (lineWidth)), 
-                (int)(lineOff) + segmentOff + bobbingAmount, 
-                lineWidth, 
-                (int)pixelHeight + 1
-            };
-            SDL_RenderFillRect(renderer, &wall_pixel);
+            SDL_SetRenderDrawColor(renderer, cr*brightness, cg*brightness, cb*brightness, 255);
+            SDL_RenderDrawPoint(renderer, rayCount, lineOff + pyo);
         }
+
+        // int pYIndex = 0;
+        // double pixelHeight = (lineH / 16.0);
+
+        // for (double y = 0.0; y < lineH; y += pixelHeight) { // Y is pixel count height
+        //     int brightness = 255-(disH / 2); if (brightness > 255) brightness = 255; if (brightness < 0) brightness = 0; // y is the height of the line drawn. so biger = closer
+        //     SDL_SetRenderDrawColor(renderer, wallCol[0], brightness, wallCol[2], wallCol[3]);
+        //     // if (normalizedPixelX <= 10) {
+        //     //     SDL_SetRenderDrawColor(renderer, 0, 25 * (brightness / 255), 0, 255);
+        //     // }
+        //     // SDL_SetRenderDrawColor(renderer, 0, 255*, 0, 255);
+        //     // if (y > lineH-(lineH / (float)textureSize)) {
+        //     //     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Bottom Border
+        //     // }
+        //     SDL_SetRenderDrawColor(renderer, 0, (255*(wallArr[(pYIndex++*16)+(int)(((double)pixelX / 16.0)*4)]) / 255) * brightness, 0, 255); 
+
+        //     int bobbingAmount = ((player_speed-1)*2*sin(frameCount));
+        //     int segmentOff = (int)y;
+
+        //     int lineWidth = WINDOW_WIDTH / RAYCOUNT;
+
+        //     SDL_Rect wall_pixel = { 
+        //         (rayCount * (lineWidth)), 
+        //         (int)(lineOff) + segmentOff + bobbingAmount, 
+        //         lineWidth, 
+        //         (int)pixelHeight + 1
+        //     };
+        //     SDL_RenderFillRect(renderer, &wall_pixel);
+        // }
 
         rayCount++;
         // std::cout << disH << " - " << lineH << std::endl;
@@ -302,6 +322,35 @@ int main () {
     frameCount = 0;
 
     fpsTimer.start();
+
+    // if( !wallTexture.loadPixelsFromFile( "assets/foo.png" ) )
+    // {
+    //     printf( "Unable to load Foo' texture!\n" );
+    //     exit(EXIT_FAILURE);
+    // }
+    //  else
+    // {
+    //     //Get pixel data
+    //     Uint32* pixels = wallTexture.getPixels32();
+    //     int pixelCount = wallTexture.getPitch32() * wallTexture.getHeight();
+
+    //      //Color key pixels
+    //     for( int i = 0; i < pixelCount; ++i )
+    //     {
+    //         std::cout << pixels[i] << std::endl;
+    //     }
+
+    //     //Create texture from manually color keyed pixels
+    //     if( !wallTexture.loadFromPixels() )
+    //     {
+    //         printf( "Unable to load Foo' texture from surface!\n" );
+    //     }
+    // }
+
+
+    for(int i = 0; i < 8; i++) texture[i].resize(texWidth * texHeight);
+
+    generateTextures(texture);  // Temp Textures to use
 
     if (font == NULL) {
         fprintf(stderr, "error: font not found\n");
@@ -388,6 +437,8 @@ int main () {
             //Wait remaining time
             SDL_Delay( SCREEN_TICKS_PER_FRAME - frameTicks );
         }
+
+        
     }
     
     return 0;
