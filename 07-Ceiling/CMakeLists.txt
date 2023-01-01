@@ -9,7 +9,7 @@ include_directories(${SDL2_INCLUDE_DIRS})
 message(STATUS "SDL2_INCLUDE_DIRS: ${SDL2_INCLUDE_DIRS}")
 message(STATUS "SDL2_INCLUDE_DIRS: ${SDL2_LIBRARIES}")
 
-add_executable(Raycaster main.cpp ./src/LTimer.cpp ./src/LTexture.cpp)
+add_executable(Raycaster main.cpp ./src/LTimer.cpp)
 target_link_libraries(Raycaster ${SDL2_LIBRARIES} SDL2_ttf SDL2_image)
 
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})

@@ -9,10 +9,9 @@
 #include <vector>
 #include <cmath>
 #include "src/LTimer.h"
-#include "src/LTexture.h"
 
-#define mapX  16      //map width
-#define mapY  16      //map height
+#define mapX  32      //map width
+#define mapY  32      //map height
 #define mapS 32      //map cube size
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
@@ -24,7 +23,7 @@
 #define SCREEN_TICKS_PER_FRAME 1000 / SCREEN_FPS
 #define DOF 16
 #define RAYCOUNT 640
-#define DEBUG 0
+#define DEBUG 1
 #define texWidth 64
 #define texHeight 64
 
@@ -32,6 +31,8 @@
 
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
+SDL_Window *playerWindow = NULL;
+SDL_Renderer *playerRenderer = NULL;
 TTF_Font* font;
 
 
@@ -49,23 +50,59 @@ bool A = false,
      W = false;
 
 
-int map[] = {
-    1,1,1,1,1,2,3,4,5,6,7,1,1,1,1,1,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,
-    1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,
-    1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,
-    1,0,0,0,0,1,1,1,1,1,1,0,0,0,0,1,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+// int map[] = {
+//     1,1,1,1,1,2,3,4,5,6,7,1,1,1,1,1,
+//     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+//     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+//     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+//     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+//     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+//     1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,
+//     1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,
+//     1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,
+//     1,0,0,0,0,1,1,1,1,1,1,0,0,0,0,1,
+//     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+//     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+//     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+//     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+//     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+//     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+// };
+
+int map[] = 
+{
+    4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,7,7,7,7,7,7,7,7,7,
+    4,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,7,7,7,7,7,7,
+    4,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,7,7,7,7,7,7,
+    4,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,7,7,7,7,7,7,7,7,7,
+    4,0,4,0,0,0,0,5,5,5,5,5,5,5,5,5,7,7,0,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    4,0,5,0,0,0,0,5,0,5,0,5,0,5,0,5,7,0,0,0,7,7,7,1,7,7,7,7,7,7,7,7,
+    4,0,6,0,0,0,0,5,0,0,0,0,0,0,0,5,7,0,0,0,0,0,0,7,7,7,7,7,7,7,7,7,
+    4,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,1,7,7,7,7,7,7,7,7,
+    4,0,7,0,0,0,0,5,0,0,0,0,0,0,0,5,7,0,0,0,0,0,0,7,7,7,7,7,7,7,7,7,
+    4,0,0,0,0,0,0,5,0,0,0,0,0,0,0,5,7,0,0,0,7,7,7,1,7,7,7,7,7,7,7,7,
+    4,0,0,0,0,0,0,5,5,5,5,0,5,5,5,5,7,7,7,7,7,7,7,1,7,7,7,7,7,7,7,7,
+    6,6,6,6,6,6,6,6,6,6,6,0,6,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,
+    7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,7,7,7,7,7,7,7,7,
+    6,6,6,6,6,6,0,6,6,6,6,0,6,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,
+    4,4,4,4,4,4,0,4,4,4,6,0,6,2,2,2,2,2,2,2,3,3,3,3,7,7,7,7,7,7,7,7,
+    4,0,0,0,0,0,0,0,0,4,6,0,6,2,0,0,0,0,0,2,0,0,0,2,7,7,7,7,7,7,7,7,
+    4,0,0,0,0,0,0,0,0,0,0,0,6,2,0,0,5,0,0,2,0,0,0,2,7,7,7,7,7,7,7,7,
+    4,0,0,0,0,0,0,0,0,4,6,0,6,2,0,0,0,0,0,2,2,0,2,2,7,7,7,7,7,7,7,7,
+    4,0,6,0,6,0,0,0,0,4,6,0,0,0,0,0,5,0,0,0,0,0,0,2,7,7,7,7,7,7,7,7,
+    4,0,0,5,0,0,0,0,0,4,6,0,6,2,0,0,0,0,0,2,2,0,2,2,7,7,7,7,7,7,7,7,
+    4,0,6,0,6,0,0,0,0,4,6,0,6,2,0,0,5,0,0,2,0,0,0,2,7,7,7,7,7,7,7,7,
+    4,0,0,0,0,0,0,0,0,4,6,0,6,2,0,0,0,0,0,2,0,0,0,2,7,7,7,7,7,7,7,7,
+    4,4,4,4,4,4,4,4,4,4,1,1,1,2,2,2,2,2,2,3,3,3,3,3,7,7,7,7,7,7,7,7,
+    4,0,0,0,0,0,0,0,0,4,6,0,6,2,0,0,0,0,0,2,2,0,2,2,7,7,7,7,7,7,7,7,
+    4,0,6,0,6,0,0,0,0,4,6,0,0,0,0,0,5,0,0,0,0,0,0,2,7,7,7,7,7,7,7,7,
+    4,0,0,5,0,0,0,0,0,4,6,0,6,2,0,0,0,0,0,2,2,0,2,2,7,7,7,7,7,7,7,7,
+    4,0,6,0,6,0,0,0,0,4,6,0,6,2,0,0,5,0,0,2,0,0,0,2,7,7,7,7,7,7,7,7,
+    4,0,0,0,0,0,0,0,0,4,6,0,6,2,0,0,0,0,0,2,0,0,0,2,7,7,7,7,7,7,7,7,
+    4,0,6,0,6,0,0,0,0,4,6,0,6,2,0,0,5,0,0,2,0,0,0,2,7,7,7,7,7,7,7,7,
+    4,0,0,0,0,0,0,0,0,4,6,0,6,2,0,0,0,0,0,2,0,0,0,2,7,7,7,7,7,7,7,7,
+    4,4,4,4,4,4,4,4,4,4,1,1,1,2,2,2,2,2,2,3,3,3,3,3,7,7,7,7,7,7,7,7
 };
 
 double px = WINDOW_HEIGHT/2,
@@ -119,42 +156,49 @@ void generateTextures(std::vector<uint32_t> texture[]) {
 void drawMap() {
     int x, y, xo, yo;
 
+    int cubeSize = 16;
+
     for(y = 0; y < mapY; y++) {
         for(x = 0; x < mapX; x++) {
 
-            if (map[y * mapX + x] == 1){ 
-                SDL_SetRenderDrawColor(renderer, 255,0,0,255);
+            if (map[y * mapX + x] != 0){ 
+                SDL_SetRenderDrawColor(playerRenderer, 255,0,0,255);
             } 
             else
             { 
-                SDL_SetRenderDrawColor(renderer, 0,0,0,255);
+                SDL_SetRenderDrawColor(playerRenderer, 0,0,0,255);
             }
 
-            xo = x * mapS; yo = y * mapS;
+            xo = x * cubeSize; yo = y * cubeSize;
 
-            SDL_Rect rect = {xo+1, yo+1, mapS, mapS};
-            SDL_RenderFillRect(renderer, &rect);
+            SDL_Rect rect = {xo+1, yo+1, cubeSize, cubeSize};
+            SDL_RenderFillRect(playerRenderer, &rect);
         } 
     }
 
 
-    SDL_SetRenderDrawColor(renderer, 255,255,255,255);
-    for (y = 0; y < mapY; y++ ) {
-        SDL_RenderDrawLine(renderer, 0, y*mapS, WINDOW_WIDTH, y*mapS);
-    }
+    // SDL_SetRenderDrawColor(playerRenderer, 255,255,255,255);
+    // for (y = 0; y < mapY; y++ ) {
+    //     SDL_RenderDrawLine(playerRenderer, 0, y*cubSize, WINDOW_WIDTH*2, y*cubSize);
+    // }
 
-    for (x = 0; x < mapX; x++) {
-        SDL_RenderDrawLine(renderer, x*mapS, 0, x*mapS, WINDOW_HEIGHT);
-    }
+    // for (x = 0; x < mapX; x++) {
+    //     SDL_RenderDrawLine(playerRenderer, x*cubSize, 0, x*cubSize, WINDOW_HEIGHT);
+    // }
 }
 
 void drawPlayer() {
-    SDL_SetRenderDrawColor(renderer, 0,255,0,255);
-    SDL_Rect rect = {px-(PLAYER_WIDTH/2), py-(PLAYER_WIDTH/2), PLAYER_WIDTH, PLAYER_WIDTH};
-    SDL_RenderFillRect(renderer, &rect);
+    SDL_SetRenderDrawColor(playerRenderer, 0,255,0,255);
+    SDL_Rect rect = {
+        ((int)px>>1)-(PLAYER_WIDTH>>1), 
+        ((int)py>>1)-(PLAYER_WIDTH>>1),
+        PLAYER_WIDTH, 
+        PLAYER_WIDTH
+        };
+    SDL_RenderFillRect(playerRenderer, &rect);
 
 
-    SDL_RenderDrawLine(renderer, px, py, px+(PRAY*cos(degToRad(pa))), py-(PRAY*sin(degToRad(pa))));
+    SDL_RenderDrawLine(playerRenderer, (int)px>>1, (int)py>>1, ((int)px>>1)+(PRAY*cos(degToRad(pa))), ((int)py>>1)-(PRAY*sin(degToRad(pa))));
 }
 
 void drawRays()
@@ -227,7 +271,7 @@ void drawRays()
 
         for (int pyo = 0; pyo < lineH; pyo++) {
             int texPos = (pixelX * 64) + (tStep * pyo); if (texPos > 4095) texPos = 4095; // Cap the index for the texture just incase
-            double brightness = (1/disH) * 100; if (brightness > 1) brightness = 1; // Fog value here
+            double brightness = (1/disH) * 50; if (brightness > 1) brightness = 1; // Fog value here
             cr = texture[mapValue][texPos] >> 24 & 0xFF; // color is stored as 32 bit int, with first 3 bytes being r,g,b and the 4th being extra. we can shift and AND to split it
             cg = texture[mapValue][texPos] >> 16 & 0xFF;
             cb = texture[mapValue][texPos] >> 8 & 0xFF;
@@ -299,9 +343,13 @@ void display() {
     SDL_Rect rect2 = {0, WINDOW_HEIGHT / 2, WINDOW_WIDTH, WINDOW_HEIGHT / 2};
     SDL_RenderFillRect(renderer, &rect2);
 
-    // drawMap();
     drawRays();
-    // drawPlayer();
+
+    if (DEBUG) {
+        drawMap();
+        drawPlayer();
+
+    }
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_Rect crosshair = {WINDOW_WIDTH/2, WINDOW_HEIGHT/2, 5, 5};
@@ -362,8 +410,11 @@ int main () {
 
     // Display Screen
     SDL_Init(SDL_INIT_VIDEO);
-    window = SDL_CreateWindow("Frame Rate Limited", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, DEBUG ? WINDOW_WIDTH*3 : WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow("Frame Rate Limited", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+
+    if (DEBUG) { playerWindow = SDL_CreateWindow("Player", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 512, 512, SDL_WINDOW_SHOWN);
+    playerRenderer = SDL_CreateRenderer(playerWindow, 0, 0); }
 
     while (!quit) {
 
@@ -427,6 +478,7 @@ int main () {
 		renderText(perf, dest);
 
         SDL_RenderPresent(renderer);
+        if (DEBUG) SDL_RenderPresent(playerRenderer);
 
         ++frameCount;
 
