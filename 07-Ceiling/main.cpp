@@ -26,6 +26,7 @@
 #define DEBUG 1
 #define texWidth 64
 #define texHeight 64
+#define WALLHEIGHT 16
 
 // ---------------------------------------------- Variables ----------------------------------------------
 
@@ -107,11 +108,15 @@ int map[] =
 
 double px = WINDOW_HEIGHT/2,
     py = WINDOW_HEIGHT/2,
-    pa = 45,
+    pa = 0, // Radians
     pdx = 0,
     pdy = 0,
     pdt = 0,
-    movent_multiplier = 0.1;
+    movent_multiplier = 0.1,
+    planeX = 0,
+    planeY = 0.66,
+    dirX = 0,
+    dirY = 1;
 
 // ---------------------------------------------- Functions ----------------------------------------------
 
@@ -156,7 +161,7 @@ void generateTextures(std::vector<uint32_t> texture[]) {
 void drawMap() {
     int x, y, xo, yo;
 
-    int cubeSize = 16;
+    int cubeSize = mapS/2;
 
     for(y = 0; y < mapY; y++) {
         for(x = 0; x < mapX; x++) {
@@ -197,8 +202,12 @@ void drawPlayer() {
         };
     SDL_RenderFillRect(playerRenderer, &rect);
 
-
     SDL_RenderDrawLine(playerRenderer, (int)px>>1, (int)py>>1, ((int)px>>1)+(PRAY*cos(degToRad(pa))), ((int)py>>1)-(PRAY*sin(degToRad(pa))));
+
+
+    // Draw Plane
+    std::cout << "planeX: " << planeX << " planeY: " << planeY << std::endl;
+    // SDL_RenderDrawLine(playerRenderer, plan)
 }
 
 void drawRays()
@@ -213,19 +222,24 @@ void drawRays()
     for(int r = 0; r<=RAYCOUNT; r++)
     {
 
+        double rayX = cos(degToRad(ra)), rayY = sin(degToRad(ra));
+
         //---Vertical--- 
         dof=0; side=0; disV=100000;
         float Tan=tan(degToRad(ra));
         int mapH, mapV;
 
-        if     (cos(degToRad(ra))> 0.001){ rx=(((int)px>>5)<<5)+mapS;      ry=(px-rx)*Tan+py; xo= mapS; yo=-xo*Tan;} //looking left
-        else if(cos(degToRad(ra))<-0.001){ rx=(((int)px>>5)<<5) -0.0001; ry=(px-rx)*Tan+py; xo=-mapS; yo=-xo*Tan;} //looking right
-        else {                             rx=px;                        ry=py; dof=DOF;}                          //looking up or down. no hit  
+        mapH = 0;
+        mapV = 0;
+
+        if     (rayX> 0.001){ rx=(((int)px>>5)<<5)+mapS;      ry=(px-rx)*Tan+py; xo= mapS; yo=-xo*Tan;} //looking left
+        else if(rayX<-0.001){ rx=(((int)px>>5)<<5) -0.0001;   ry=(px-rx)*Tan+py; xo=-mapS; yo=-xo*Tan;} //looking right
+        else {                             rx=px;             ry=py; dof=DOF;}                          //looking up or down. no hit  
 
         while(dof<DOF) 
         { 
             mx=(int)(rx)>>5; my=(int)(ry)>>5; mp=my*mapX+mx;                     
-            if(mp>0 && mp<mapX*mapY && map[mp]!=0){ dof=DOF; disV=cos(degToRad(ra))*(rx-px)-sin(degToRad(ra))*(ry-py); mapV = map[mp]; } //hit         
+            if(mp>0 && mp<mapX*mapY && map[mp]!=0){ dof=DOF; disV=rayX*(rx-px) - rayY*(ry-py); mapV = map[mp]; } //hit         
             else{ rx+=xo; ry+=yo; dof+=1;}                                                                            //check next horizontal
         } 
         vx=rx; vy=ry;
@@ -234,15 +248,14 @@ void drawRays()
         dof=0; disH=100000;
         Tan=1.0/Tan; 
 
-
-        if     (sin(degToRad(ra))> 0.001){ ry=(((int)py>>5)<<5) -0.0001; rx=(py-ry)*Tan+px; yo=-mapS; xo=-yo*Tan;} //looking up 
-        else if(sin(degToRad(ra))<-0.001){ ry=(((int)py>>5)<<5)+mapS;      rx=(py-ry)*Tan+px; yo= mapS; xo=-yo*Tan;} //looking down
+        if     (rayY> 0.001){ ry=(((int)py>>5)<<5) -0.0001; rx=(py-ry)*Tan+px; yo=-mapS; xo=-yo*Tan;} //looking up 
+        else if(rayY<-0.001){ ry=(((int)py>>5)<<5)+mapS;    rx=(py-ry)*Tan+px; yo= mapS; xo=-yo*Tan;} //looking down
         else{ rx=px; ry=py; dof=DOF;}                                                                              //looking straight left or right
         
         while(dof<DOF) 
         { 
             mx=(int)(rx)>>5; my=(int)(ry)>>5; mp=my*mapX+mx;                          
-            if(mp>0 && mp<mapX*mapY && map[mp]!=0){ dof=DOF; disH=cos(degToRad(ra))*(rx-px)-sin(degToRad(ra))*(ry-py); mapH = map[mp]; } //hit         
+            if(mp>0 && mp<mapX*mapY && map[mp]!=0){ dof=DOF; disH=rayX*(rx-px)-rayY*(ry-py); mapH = map[mp]; } //hit         
             else{ rx+=xo; ry+=yo; dof+=1;}                                                                            //check next horizontal
         } 
         
@@ -262,15 +275,16 @@ void drawRays()
             pixelX = (int)rx % 64;
             mapValue = mapH;
         }
+  
         
         int ca=fixAngle(pa-ra); disH=disH*cos(degToRad(ca));                                                    //fix fisheye 
-        double lineH = (mapS * WINDOW_HEIGHT) / (disH); if(lineH > WINDOW_HEIGHT){ lineH = WINDOW_HEIGHT;}      //line height and limit
+        double lineH = (WALLHEIGHT * WINDOW_HEIGHT) / (disH); if(lineH > WINDOW_HEIGHT){ lineH = WINDOW_HEIGHT;}      //line height and limit
         double lineOff = (WINDOW_HEIGHT / 2) - (lineH / 2);                                                     //line offset
         double tStep = 1.0 * texHeight / lineH;                                                                 //texture step
         u_int8_t cr,cg,cb;
 
         for (int pyo = 0; pyo < lineH; pyo++) {
-            int texPos = (pixelX * 64) + (tStep * pyo); if (texPos > 4095) texPos = 4095; // Cap the index for the texture just incase
+            int texPos = (pixelX * 64) + (tStep * pyo); if (texPos > 4095) texPos = 4095; if (texPos < 0) texPos = 0; // Cap the index for the texture just incase
             double brightness = (1/disH) * 50; if (brightness > 1) brightness = 1; // Fog value here
             cr = texture[mapValue][texPos] >> 24 & 0xFF; // color is stored as 32 bit int, with first 3 bytes being r,g,b and the 4th being extra. we can shift and AND to split it
             cg = texture[mapValue][texPos] >> 16 & 0xFF;
@@ -317,6 +331,77 @@ void drawRays()
     // std::cout << "a" << std::endl;
 }
 
+void drawFloor() {
+
+
+     //FLOOR CASTING
+    for(int y = 0; y < WINDOW_HEIGHT/3; y++)
+    {
+      // rayDir for leftmost ray (x = 0) and rightmost ray (x = w)
+      float rayDirX0 = dirX - planeX;
+      float rayDirY0 = dirY - planeY;
+      float rayDirX1 = dirX + planeX;
+      float rayDirY1 = dirY + planeY;
+
+      // Current y position compared to the center of the screen (the horizon)
+      int p = y - WINDOW_HEIGHT / 2;
+
+      // Vertical position of the camera.
+      float posZ = 0.5 * WINDOW_HEIGHT;
+
+      // Horizontal distance from the camera to the floor for the current row.
+      // 0.5 is the z position exactly in the middle between floor and ceiling.
+      float rowDistance = posZ / p;
+
+      // calculate the real world step vector we have to add for each x (parallel to camera plane)
+      // adding step by step avoids multiplications with a weight in the inner loop
+      float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / WINDOW_WIDTH;
+      float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / WINDOW_WIDTH;
+
+      // real world coordinates of the leftmost column. This will be updated as we step to the right.
+      float floorX = px + rowDistance * rayDirX0;
+      float floorY = py + rowDistance * rayDirY0;
+
+      u_int8_t cr, cg, cb;
+
+      for(int x = 0; x < WINDOW_WIDTH; ++x)
+      {
+        // the cell coord is simply got from the integer parts of floorX and floorY
+        int cellX = (int)(floorX);
+        int cellY = (int)(floorY);
+
+        // get the texture coordinate from the fractional part
+        int tx = (int)(texWidth * (floorX - cellX)) & (texWidth - 1);
+        int ty = (int)(texHeight * (floorY - cellY)) & (texHeight - 1);
+
+        floorX += floorStepX;
+        floorY += floorStepY;
+
+        // choose texture and draw the pixel
+        int floorTexture = 0;
+        int ceilingTexture = 6;
+        Uint32 color;
+
+        // floor
+        color = texture[floorTexture][texWidth * ty + tx];
+        color = (color >> 1) & 8355711; // make a bit darker
+        // buffer[y][x] = color;
+
+        //ceiling (symmetrical, at screenHeight - y - 1 instead of y)
+        // color = texture[ceilingTexture][texWidth * ty + tx];
+        // color = (color >> 1) & 8355711; // make a bit darker
+        // buffer[screenHeight - y - 1][x] = color;
+
+        cr = texture[floorTexture][texWidth * ty + tx] >> 24 & 0xFF; // color is stored as 32 bit int, with first 3 bytes being r,g,b and the 4th being extra. we can shift and AND to split it
+        cg = texture[floorTexture][texWidth * ty + tx] >> 16 & 0xFF;
+        cb = texture[floorTexture][texWidth * ty + tx] >> 8 & 0xFF;
+
+        SDL_SetRenderDrawColor(renderer, cr, cg, cb, 255);
+        SDL_RenderDrawPoint(renderer, x, y);
+      }
+    }
+}
+
 void renderText(std::string text, SDL_Rect dest) {
 	SDL_Color fg = {255, 255, 255, 0};
 	SDL_Surface* surf = TTF_RenderText_Solid(font, text.c_str(), fg);
@@ -343,7 +428,8 @@ void display() {
     SDL_Rect rect2 = {0, WINDOW_HEIGHT / 2, WINDOW_WIDTH, WINDOW_HEIGHT / 2};
     SDL_RenderFillRect(renderer, &rect2);
 
-    drawRays();
+    // drawFloor(); // Floor
+    drawRays(); // Walls
 
     if (DEBUG) {
         drawMap();
@@ -450,8 +536,27 @@ int main () {
             }
         }
 
-        if(A){ pa+=2; pa = fixAngle(pa); pdx=cos(degToRad(pa)); pdy=-sin(degToRad(pa));} 	
-        if(D){ pa-=2; pa = fixAngle(pa); pdx=cos(degToRad(pa)); pdy=-sin(degToRad(pa));} 
+        if(A){ 
+            pa+=2; pa = fixAngle(pa); pdx=cos(degToRad(pa)); pdy=-sin(degToRad(pa));
+
+            dirX = cos(degToRad(pa));
+            dirY = sin(degToRad(pa));
+
+
+            double oldPlaneX = planeX;
+            planeX = planeX - planeY;
+            planeY = oldPlaneX + planeY;
+        } 	    
+        if(D){ 
+            pa-=2; pa = fixAngle(pa); pdx=cos(degToRad(pa)); pdy=-sin(degToRad(pa));
+
+            dirX = cos(degToRad(pa));
+            dirY = sin(degToRad(pa));
+
+            double oldPlaneX = planeX;
+            planeX = planeX - planeY;
+            planeY = oldPlaneX + planeY;
+        } 
         if(W){px+=(pdx*player_speed); py+=(pdy*player_speed); }
         if(S){px-=(pdx*player_speed); py-=(pdy*player_speed); }
 
