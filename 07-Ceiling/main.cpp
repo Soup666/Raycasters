@@ -206,8 +206,8 @@ void drawPlayer() {
 
 
     // Draw Plane
-    std::cout << "planeX: " << planeX << " planeY: " << planeY << std::endl;
-    // SDL_RenderDrawLine(playerRenderer, plan)
+    // std::cout << "planeX: " << planeX << " planeY: " << planeY << std::endl;
+    SDL_RenderDrawLine(playerRenderer, plan)
 }
 
 void drawRays()
@@ -223,6 +223,53 @@ void drawRays()
     {
 
         double rayX = cos(degToRad(ra)), rayY = sin(degToRad(ra));
+
+
+        //calculate ray position and direction
+        double cameraX = 2 * r / double(WINDOW_WIDTH) - 1; //x-coordinate in camera space from -1 to 1 (middle is 0)
+        double rayDirX = dirX + planeX * cameraX;
+        double rayDirY = dirY + planeY * cameraX;
+
+        // Grid coords in
+        mx = ((int)px) % 64;
+        my = ((int)py) % 64;
+
+        // length of ray from current pos to next x or y side
+        double sideDistX;
+        double sideDistY;
+
+
+        // length of ray from one x or y side to next x or y side
+        // double deltaDistX = ()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         //---Vertical--- 
         dof=0; side=0; disV=100000;
