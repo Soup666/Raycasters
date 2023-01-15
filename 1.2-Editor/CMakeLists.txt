@@ -11,7 +11,9 @@ message(STATUS "SDL2_INCLUDE_DIRS: ${SDL2_LIBRARIES}")
 
 find_library(SDL2_LIB SDL2)
 
-add_executable(editor main.cpp)
+add_definitions(-w)
+
+add_executable(editor main.cpp src/LEditor.cpp)
 target_link_libraries(editor ${SDL2_LIBRARIES} SDL2_ttf SDL2_image)
 
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})

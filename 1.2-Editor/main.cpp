@@ -1,64 +1,63 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <array>
+#include <SDL2/SDL.h>
+#include "src/LEditor.h"
+
+#define GRIDSIZE 8
+#define GRIDX 64
+#define WIDTH 640
+#define HEIGHT 512
 
 using namespace std;
 
-u_int8_t roomTemplate[64*64];
+array<u_int8_t, 64*64> roomTemplate;
 
-void loadTemplate() {
+SDL_Renderer* renderer;
+SDL_Window* window;
 
-    ifstream fin;
+bool finished = false;
 
-    fin.open("backup.bin", ios::binary);
-    vector<unsigned char> buffer(istreambuf_iterator<char>(fin), {});
-
-    int count = 0;
-    for (char index : buffer) {
-        roomTemplate[count++] = (int)index;
+void drawGrid() {
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    for (int i = 0; i <= GRIDX; i++) {
+        SDL_RenderDrawLine(renderer, i * GRIDSIZE, 0, i * GRIDSIZE, HEIGHT);
+        SDL_RenderDrawLine(renderer, 0, i * GRIDSIZE, HEIGHT, i * GRIDSIZE);
     }
-
-    fin.close();
-
-}
-
-void saveRoom() {
-
-    ofstream fout;
-
-    fout.open("file.bin", ios::binary | ios::out);
-
-    fout.write((char*) &roomTemplate, sizeof(roomTemplate));
-
-    fout.close();
-
-}
-
-void debugFile() {
-
-    ifstream fin;
-
-    fin.open("file.bin", ios::binary);
-    vector<unsigned char> buffer(istreambuf_iterator<char>(fin), {});
-
-    for (auto index : buffer) {
-        cout << (int)index << endl;
-    }
-
-    fin.close();
-
-}
-
-void debugRoom() {
-    for (auto index : roomTemplate) cout << (int)index << endl;
 }
 
 int main(int argv, char** argc) {
 
-    loadTemplate();
-    debugRoom();
+    cout << "Started" << endl;
 
-    // Read
-    
+    SDL_Init(SDL_INIT_VIDEO);
+    SDL_CreateWindowAndRenderer(WIDTH, HEIGHT, 0, &window, &renderer);
+
+    LEditor editor = LEditor();
+    editor.loadTemplate("backup.bin");
+
+    while (!finished) {
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                finished = true;
+            }
+            else if (event.type == SDL_KEYDOWN) {
+                if (event.key.keysym.sym == SDLK_ESCAPE) {
+                    finished = true;
+                }
+            }
+        }
+
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
+
+        drawGrid();
+
+
+        SDL_RenderPresent(renderer);
+    }
+
     return 0;
 }
