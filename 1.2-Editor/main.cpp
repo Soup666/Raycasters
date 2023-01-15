@@ -4,6 +4,7 @@
 #include <array>
 #include <SDL2/SDL.h>
 #include "src/LEditor.h"
+#include "src/LTextures.h"
 
 #define GRIDSIZE 8
 #define GRIDX 64
@@ -16,6 +17,9 @@ array<u_int8_t, 64*64> roomTemplate;
 
 SDL_Renderer* renderer;
 SDL_Window* window;
+
+
+LTextures textures;
 
 bool finished = false;
 
@@ -32,10 +36,13 @@ int main(int argv, char** argc) {
     cout << "Started" << endl;
 
     SDL_Init(SDL_INIT_VIDEO);
-    SDL_CreateWindowAndRenderer(WIDTH, HEIGHT, 0, &window, &renderer);
+    SDL_CreateWindowAndRenderer(WIDTH, HEIGHT, SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC, &window, &renderer);
 
-    LEditor editor = LEditor();
-    editor.loadTemplate("backup.bin");
+    textures = LTextures();
+    textures.generateTextures();
+
+    LEditor editor = LEditor(textures);
+    editor.loadTemplate("./bin/file.bin");
 
     while (!finished) {
         SDL_Event event;
@@ -47,6 +54,16 @@ int main(int argv, char** argc) {
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
                     finished = true;
                 }
+                if (event.key.keysym.sym == SDLK_s) {
+                    editor.saveRoom();
+                }
+            }
+            else if (event.type == SDL_MOUSEBUTTONDOWN) {
+                int x, y;
+                SDL_GetMouseState(&x, &y);
+                x /= GRIDSIZE;
+                y /= GRIDSIZE;
+                editor.incrememntSegment(x, y);
             }
         }
 
@@ -54,6 +71,7 @@ int main(int argv, char** argc) {
         SDL_RenderClear(renderer);
 
         drawGrid();
+        editor.drawMap(renderer);
 
 
         SDL_RenderPresent(renderer);

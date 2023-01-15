@@ -13,9 +13,11 @@ find_library(SDL2_LIB SDL2)
 
 add_definitions(-w)
 
-add_executable(editor main.cpp src/LEditor.cpp)
+add_executable(editor main.cpp src/LEditor.cpp src/LTextures.cpp)
 target_link_libraries(editor ${SDL2_LIBRARIES} SDL2_ttf SDL2_image)
 
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY bin DESTINATION ${CMAKE_BINARY_DIR})
+
 
 
