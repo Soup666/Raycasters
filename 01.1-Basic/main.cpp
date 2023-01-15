@@ -2,17 +2,18 @@
 #include <SDL2/SDL.h>
 #include <vector>
 #include <cmath>
+#include "./src/LEditor.cpp"
 
 #define FOV 60.0
-#define WIDTH 320
-#define HEIGHT 240
+#define WIDTH 720
+#define HEIGHT 640
 #define PI 3.14
 #define DEBUG 0
-#define PHEIGHT 240
-#define PWIDTH 320
-#define DOF 16
-#define MAPR 8
-#define MAPC 16
+#define PHEIGHT 640
+#define PWIDTH 720
+#define DOF 64
+#define MAPR 64
+#define MAPC 64
 #define texWidth 64
 #define texHeight 64
 
@@ -26,16 +27,7 @@ bool S = false;
 bool D = false;
 bool A = false;
 
-int room[MAPR*MAPC] = {
-    6,2,3,3,3,4,4,5,5,5,5,5,5,5,5,5,
-    6,0,0,0,0,0,0,6,5,0,0,0,0,0,0,5,
-    6,0,1,0,0,0,0,6,5,0,1,0,0,0,0,5,
-    6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,
-    6,0,0,0,0,0,1,6,5,0,0,0,0,0,4,5,
-    6,0,0,0,0,0,0,6,5,0,0,0,0,0,0,5,
-    6,0,0,0,0,0,0,6,5,0,0,0,0,0,0,5,
-    6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5
-};
+u_int8_t room[64*64];
 
 double px, py, pa, projectionDist, pdx, pdy, pSpeed;
 
@@ -70,6 +62,11 @@ void generateTextures(std::vector<uint32_t> texture[]) {
   }
 }
 
+int getMapPos(double x, double y) {
+
+    return((int)floor(x/64) % MAPC + (MAPC*((int)floor(y / 64))));
+}
+
 // Handles all the inputs
 void handleInputs(SDL_Event event) {
 
@@ -84,7 +81,7 @@ void handleInputs(SDL_Event event) {
                         case SDLK_s: S = true; break;
                         case SDLK_a: A = true; break;
                         case SDLK_d: D = true; break;
-                        case SDLK_LSHIFT: pSpeed = 3; break;
+                        case SDLK_LSHIFT: pSpeed = 20; break;
                         case SDLK_ESCAPE: SDL_DestroyWindow(window); SDL_Quit(); exit(0); break;
                     }
                     break;
@@ -94,7 +91,7 @@ void handleInputs(SDL_Event event) {
                         case SDLK_s: S = false; break;
                         case SDLK_a: A = false; break;
                         case SDLK_d: D = false; break;
-                        case SDLK_LSHIFT: pSpeed = 1; break;
+                        case SDLK_LSHIFT: pSpeed = 10; break;
                     }
                     break;
             }
@@ -102,8 +99,12 @@ void handleInputs(SDL_Event event) {
 
         if(A) {pa-=2; fixAngle(pa); pdx=cos(degToRad(pa)); pdy=-sin(degToRad(pa));}
         if(D) {pa+=2; fixAngle(pa); pdx=cos(degToRad(pa)); pdy=-sin(degToRad(pa));}
-        if(W){px+=(pdx) * pSpeed; py-=(pdy) * pSpeed; }
-        if(S){px-=(pdx) * pSpeed; py+=(pdy) * pSpeed; }
+        if(W) {
+            if (room[getMapPos(px+(pdx*pSpeed), py-(pdy*pSpeed))] == 0 ) { px+=(pdx) * pSpeed; py-=(pdy) * pSpeed; }
+        }
+        if(S) {
+            if (room[getMapPos(px-(pdx*pSpeed), py+(pdy*pSpeed))] == 0 ) { px-=(pdx) * pSpeed; py+=(pdy) * pSpeed; }
+        }
 }
 
 // Creates the window and renderer
@@ -155,11 +156,6 @@ double getHorizontalDistance(double ra, double &rp, int &mv) {
 
         if (rx > 64*DOF || ry > 64*DOF || rx < 0 || ry < 0) return 999999.0;
 
-        // SDL_Rect rect2 = {(int)rx,(int)ry,4,4};
-        // SDL_Rect rect2 = {(int)(floor(rx/64) * 64), floor(ry/64) * 64, 64, 64};
-        // SDL_RenderFillRect(renderer, &rect2);
-
-
         if (DEBUG) SDL_RenderDrawPoint(renderer, rx, ry);
 
         int pos = ((int)floor(rx/64) % MAPC + (MAPC*((int)floor(ry / 64))));
@@ -171,7 +167,6 @@ double getHorizontalDistance(double ra, double &rp, int &mv) {
             mv = room[pos];
             return sqrt(pow(rx-px, 2) + pow(ry-py, 2));
         }
-
         
         rx += dx;
         ry += dy;
@@ -251,18 +246,18 @@ void drawRay() {
 
             if (!DEBUG) {
                 double height = 64.0 / dist * projectionDist;
+                if (height > HEIGHT) height = HEIGHT;
 
                 rp = (int)rp % 64;
                 double tStep = 1.0 * texHeight / height;                                                                 //texture step
                 u_int8_t cr,cg,cb;
-
 
                 int startY = (PHEIGHT/2)-(height/2);
 
                 for (int h=0; h<height;h++) {
 
                     int texPos = (rp * 64) + (tStep * h); if (texPos > 4095) texPos = 4095; if (texPos < 0) texPos = 0; // Cap the index for the texture just incase
-                    double brightness = (1/dist) * 50; if (brightness > 1) brightness = 1; // Fog value here
+                    double brightness = (1/dist) * 200; if (brightness > 1) brightness = 1; // Fog value here
                     cr = texture[mapV][texPos] >> 24 & 0xFF; // color is stored as 32 bit int, with first 3 bytes being r,g,b and the 4th being extra. we can shift and AND to split it
                     cg = texture[mapV][texPos] >> 16 & 0xFF;
                     cb = texture[mapV][texPos] >> 8 & 0xFF;
@@ -275,7 +270,6 @@ void drawRay() {
         }
     }
 
-    // std::cout << Ax << " " << tan(ra) << std::endl;
     return;
 }
 
@@ -284,10 +278,9 @@ void drawGrid() {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 
     for (int index = 0; index<MAPR*MAPC; index++) {
-        if (room[index] == 1) {
+        if (room[index] != 1) {
             int x = (int)(index%MAPC)*64;
             int y = (int(floor(index/MAPC)))*64;
-            // std::cout << y << std::endl;
             SDL_Rect rect = {x,y,64,64};
             SDL_RenderFillRect(renderer, &rect);
         }
@@ -306,6 +299,10 @@ void display() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
+    SDL_SetRenderDrawColor(renderer, 75, 75, 125, 255);
+    SDL_Rect floor = {0, PHEIGHT/2, PWIDTH, PHEIGHT};
+    SDL_RenderFillRect(renderer, &floor);
+
     if (DEBUG) drawGrid();
     if (DEBUG) drawPlayer();
     drawRay();
@@ -316,14 +313,17 @@ void display() {
 // Main loop
 int main(int argc, char *argv[])
 {
-    printf("Starting");
+    printf("Starting\n");
 
     px = 4*64 - 32;
     py = 4*64 - 32;
     pa = 300;
     pdx = 0;
     pdy = 0;
-    pSpeed = 1;
+    pSpeed = 10;
+
+    LEditor editor = LEditor();
+    editor.loadTemplate(room);
 
     for(int i = 0; i < 8; i++) texture[i].resize(texWidth * texHeight);
     generateTextures(texture);
@@ -337,7 +337,6 @@ int main(int argc, char *argv[])
         handleInputs(event);
 
         display();
-
 
     }
 

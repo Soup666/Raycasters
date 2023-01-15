@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(raycaster VERSION 0.1.0)
+project(editor VERSION 0.1.0)
 
 
 find_package(SDL2 REQUIRED)
@@ -11,8 +11,8 @@ message(STATUS "SDL2_INCLUDE_DIRS: ${SDL2_LIBRARIES}")
 
 find_library(SDL2_LIB SDL2)
 
-add_executable(raycaster main.cpp ./src/LEditor.cpp)
-target_link_libraries(raycaster ${SDL2_LIBRARIES} SDL2_ttf SDL2_image)
+add_executable(editor main.cpp)
+target_link_libraries(editor ${SDL2_LIBRARIES} SDL2_ttf SDL2_image)
 
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})
 
