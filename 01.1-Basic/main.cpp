@@ -237,8 +237,8 @@ void drawRay() {
             double rp = rpH;
             int mapV = mvH;
 
-            SDL_SetRenderDrawColor(renderer, 255,255,255,255);
-            if (distV < distH) {dist = distV; rp = rpV; mapV = mvV; SDL_SetRenderDrawColor(renderer, 100,255,255,255);}
+            double brightness = 1.0;
+            if (distV < distH) {dist = distV; rp = rpV; mapV = mvV; brightness = 0.2;}
 
             double ca=pa-ra;
             fixAngle(ca); 
@@ -257,7 +257,7 @@ void drawRay() {
                 for (int h=0; h<height;h++) {
 
                     int texPos = (rp * 64) + (tStep * h); if (texPos > 4095) texPos = 4095; if (texPos < 0) texPos = 0; // Cap the index for the texture just incase
-                    double brightness = (1/dist) * 200; if (brightness > 1) brightness = 1; // Fog value here
+                    // double brightness = (1/dist) * 500; if (brightness > 1) brightness = 1; // Fog value here
                     cr = texture[mapV][texPos] >> 24 & 0xFF; // color is stored as 32 bit int, with first 3 bytes being r,g,b and the 4th being extra. we can shift and AND to split it
                     cg = texture[mapV][texPos] >> 16 & 0xFF;
                     cb = texture[mapV][texPos] >> 8 & 0xFF;
@@ -299,7 +299,7 @@ void display() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    SDL_SetRenderDrawColor(renderer, 75, 75, 125, 255);
+    SDL_SetRenderDrawColor(renderer, 25, 25, 50, 255);
     SDL_Rect floor = {0, PHEIGHT/2, PWIDTH, PHEIGHT};
     SDL_RenderFillRect(renderer, &floor);
 
