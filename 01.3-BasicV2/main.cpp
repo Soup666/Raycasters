@@ -2,7 +2,8 @@
 #include <SDL2/SDL.h>
 #include <vector>
 #include <cmath>
-#include "./src/LEditor.cpp"
+#include "./src/LEditor.h"
+#include "./src/LTextures.h"
 
 #define FOV 60.0
 #define WIDTH 720
@@ -16,6 +17,7 @@
 #define MAPC 64
 #define texWidth 64
 #define texHeight 64
+#define mapMultiplier 10
 
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
@@ -27,11 +29,13 @@ bool S = false;
 bool D = false;
 bool A = false;
 
-u_int8_t room[64*64];
+int mode = 0;
+
+array<u_int8_t, 64*64> room;
+LTextures textures;
+LEditor editor(textures);
 
 double px, py, pa, projectionDist, pdx, pdy, pSpeed;
-
-std::vector<uint32_t> texture[8];
 
 void fixAngle(double &a) {
     if (a < 0) a += 360.0;
@@ -40,26 +44,6 @@ void fixAngle(double &a) {
 
 double degToRad(double a) {
     return a*(PI/180.0);
-}
-
-void generateTextures(std::vector<uint32_t> texture[]) {
-    //generate some textures
-  for(int x = 0; x < texWidth; x++)
-  for(int y = 0; y < texHeight; y++)
-  {
-    int xorcolor = (x * 256 / texWidth) ^ (y * 256 / texHeight);
-    //int xcolor = x * 256 / texWidth;
-    int ycolor = y * 256 / texHeight;
-    int xycolor = y * 128 / texHeight + x * 128 / texWidth;
-    texture[0][texWidth * y + x] = 65536 * 254 * (x != y && x != texWidth - y); //flat red texture with black cross
-    texture[1][texWidth * y + x] = xycolor + 256 * xycolor + 65536 * xycolor; //sloped greyscale
-    texture[2][texWidth * y + x] = 256 * xycolor + 65536 * xycolor; //sloped yellow gradient
-    texture[3][texWidth * y + x] = xorcolor + 256 * xorcolor + 65536 * xorcolor; //xor greyscale
-    texture[4][texWidth * y + x] = 256 * xorcolor; //xor green
-    texture[5][texWidth * y + x] = 65536 * 192 * (x % 16 && y % 16); //red bricks
-    texture[6][texWidth * y + x] = 65536 * ycolor; //red gradient
-    texture[7][texWidth * y + x] = 128 + 256 * 128 + 65536 * 128; //flat grey texture
-  }
 }
 
 int getMapPos(double x, double y) {
@@ -92,7 +76,17 @@ void handleInputs(SDL_Event event) {
                         case SDLK_a: A = false; break;
                         case SDLK_d: D = false; break;
                         case SDLK_LSHIFT: pSpeed = 10; break;
+                        case SDLK_TAB: mode = (mode + 1) % 2; break;
                     }
+                    break;
+
+                case SDL_MOUSEBUTTONDOWN:
+                    int x, y;
+                    SDL_GetMouseState(&x, &y);
+                    x /= 8; // Again, 8 for the LEditor
+                    y /= 8;
+                    editor.incrememntSegment(x, y);
+                    room = editor.getMap();
                     break;
             }
         }
@@ -127,11 +121,15 @@ int createWindow() {
 }
 
 void drawPlayer() {
-    SDL_Rect rect = { ceil(px-2.5), ceil(py-2.5), 5, 5 };
+
+    int screenPx = floor(px / 8);
+    int screenPy = floor(py / 8); // 8 because the LEditor uses 8 pixels for a square
+
+    SDL_Rect rect = { screenPx, screenPy, 5, 5 };
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_RenderFillRect(renderer, &rect);
 
-    SDL_RenderDrawLine(renderer, px, py, px + 10 * cos(degToRad(pa)), py + 10 * sin(degToRad(pa)));
+    SDL_RenderDrawLine(renderer, screenPx, screenPy, screenPx + 10 * cos(degToRad(pa)), screenPy + 10 * sin(degToRad(pa)));
 }
 
 double getHorizontalDistance(double ra, double &rp, int &mv) {
@@ -150,18 +148,18 @@ double getHorizontalDistance(double ra, double &rp, int &mv) {
     double ry = Ay;
     if (ra >= PI) { dx = -dx; dy = -dy; }
 
-    if (DEBUG) SDL_RenderDrawPoint(renderer, rx, ry);
+    if (mode == 1) SDL_RenderDrawPoint(renderer, rx, ry);
 
     for (int i=0; i<DOF; i++) {
 
         if (rx > 64*DOF || ry > 64*DOF || rx < 0 || ry < 0) return 999999.0;
 
-        if (DEBUG) SDL_RenderDrawPoint(renderer, rx, ry);
+        if (mode == 1) SDL_RenderDrawPoint(renderer, rx, ry);
 
         int pos = ((int)floor(rx/64) % MAPC + (MAPC*((int)floor(ry / 64))));
         if (room[pos] != 0) {
             SDL_Rect rect = {(int)(floor(rx/64) * 64), floor(ry/64) * 64, 64, 64};
-            if (DEBUG) SDL_RenderFillRect(renderer, &rect);
+            if (mode == 1) SDL_RenderFillRect(renderer, &rect);
             // return abs(ry-py) / sin(ra);
             rp = rx;
             mv = room[pos];
@@ -191,18 +189,18 @@ double getVerticalDistance(double ra, double &rp, int &mv) {
     double rx = Ax;
     if (ra >= PI/2 && ra <= (3*PI)/2) { dx = -dx; dy = -dy; }
 
-    if (DEBUG) SDL_RenderDrawPoint(renderer, rx, ry);
+    if (mode == 1) SDL_RenderDrawPoint(renderer, rx, ry);
 
     for (int i=0; i<DOF; i++) {
 
         if (rx > 64*DOF || ry > 64*DOF || rx < 0 || ry < 0) return 999999.0;
 
-        if (DEBUG) SDL_RenderDrawPoint(renderer, rx, ry);
+        if (mode == 1) SDL_RenderDrawPoint(renderer, rx, ry);
 
         int pos = ((int)floor(rx/64) % MAPC + (MAPC*((int)floor(ry / 64))));
         if (room[pos] != 0) {
             SDL_Rect rect = {(int)(floor(rx/64) * 64), floor(ry/64) * 64, 64, 64};
-            if (DEBUG) SDL_RenderFillRect(renderer, &rect);
+            if (mode == 1) SDL_RenderFillRect(renderer, &rect);
             // return abs(ry-py) / sin(ra);
             rp = ry;
             mv = room[pos];
@@ -248,9 +246,9 @@ void drawRay() {
 
             double ca=pa-ra;
             fixAngle(ca); 
-            // dist=dist*cos(degToRad(ca));  
+            dist=dist*cos(degToRad(ca));  
 
-            if (!DEBUG) {
+            if (mode == 0) {
                 double height = 64.0 / dist * projectionDist;
                 if (height > HEIGHT) height = HEIGHT;
 
@@ -263,12 +261,11 @@ void drawRay() {
                 for (int h=0; h<height;h++) {
 
                     int texPos = (rp * 64) + (tStep * h); if (texPos > 4095) texPos = 4095; if (texPos < 0) texPos = 0; // Cap the index for the texture just incase
-                    // double brightness = (1/dist) * 500; if (brightness > 1) brightness = 1; // Fog value here
-                    cr = texture[mapV][texPos] >> 24 & 0xFF; // color is stored as 32 bit int, with first 3 bytes being r,g,b and the 4th being extra. we can shift and AND to split it
-                    cg = texture[mapV][texPos] >> 16 & 0xFF;
-                    cb = texture[mapV][texPos] >> 8 & 0xFF;
+                    double brightness = (1/dist) * 500; if (brightness > 1) brightness = 1; // Fog value here
 
-                    SDL_SetRenderDrawColor(renderer, cr*brightness, cg*brightness, cb*brightness, 255);
+                    array<u_int8_t, 3> pixelValue = textures.textureToWall(mapV, rp, tStep * h);
+
+                    SDL_SetRenderDrawColor(renderer, pixelValue[0] * brightness, pixelValue[1] * brightness, pixelValue[2] * brightness, 255);
                     SDL_RenderDrawPoint(renderer, r, startY+h);
                 }
             }
@@ -281,23 +278,25 @@ void drawRay() {
 
 void drawGrid() {
 
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    // SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 
-    for (int index = 0; index<MAPR*MAPC; index++) {
-        if (room[index] != 1) {
-            int x = (int)(index%MAPC)*64;
-            int y = (int(floor(index/MAPC)))*64;
-            SDL_Rect rect = {x,y,64,64};
-            SDL_RenderFillRect(renderer, &rect);
-        }
-    }
+    // for (int index = 0; index<MAPR*MAPC; index++) {
+    //     if (room[index] != 1) {
+    //         int x = (index % MAPC) * 64 / mapMultiplier;
+    //         int y = (index / MAPC) * 64 / mapMultiplier;
+    //         SDL_Rect rect = {x,y,mapMultiplier,mapMultiplier};
+    //         SDL_RenderFillRect(renderer, &rect);
+    //     }
+    // }
+    // SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
-    for (int x = 0; x < MAPR*64; x += 64) {
-        SDL_RenderDrawLine(renderer, 0, x, MAPC*64, x);
-    }
-    for (int y = 0; y < MAPC*64; y += 64) {
-        SDL_RenderDrawLine(renderer, y, 0, y, MAPR*64);
-    }
+    // for (int x = 0; x < MAPR; x += 1) {
+    //     SDL_RenderDrawLine(renderer, 0, x * mapMultiplier, WIDTH, x * mapMultiplier);
+    // }
+    // for (int y = 0; y < MAPC; y += 1) {
+    //     SDL_RenderDrawLine(renderer, y * mapMultiplier, 0, y * mapMultiplier, HEIGHT);
+    // }
+
 }
 
 // Main Draw Loop
@@ -305,13 +304,19 @@ void display() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    SDL_SetRenderDrawColor(renderer, 25, 25, 50, 255);
-    SDL_Rect floor = {0, PHEIGHT/2, PWIDTH, PHEIGHT};
-    SDL_RenderFillRect(renderer, &floor);
+    if (mode == 0) {
 
-    if (DEBUG) drawGrid();
-    if (DEBUG) drawPlayer();
-    drawRay();
+        SDL_SetRenderDrawColor(renderer, 25, 25, 50, 255);
+        SDL_Rect floor = {0, PHEIGHT/2, PWIDTH, PHEIGHT};
+        SDL_RenderFillRect(renderer, &floor);
+
+        drawRay();
+    }
+    else if (mode == 1) {
+        // drawGrid();
+        editor.drawMap(renderer);
+        drawPlayer();
+    }
 
     SDL_RenderPresent(renderer);
 }
@@ -328,11 +333,11 @@ int main(int argc, char *argv[])
     pdy = 0;
     pSpeed = 10;
 
-    LEditor editor = LEditor();
-    editor.loadTemplate(room);
+    textures = LTextures();
+    textures.generateTextures();
 
-    for(int i = 0; i < 8; i++) texture[i].resize(texWidth * texHeight);
-    generateTextures(texture);
+    editor.loadTemplate("./bin/file.bin");
+    room = editor.getMap();
 
     projectionDist = (PWIDTH/2) / tan(degToRad(FOV/2));
 
