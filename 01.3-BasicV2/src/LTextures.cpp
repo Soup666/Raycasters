@@ -25,6 +25,9 @@ array<u_int8_t, 3> LTextures::textureToWall(int mapValue, int x, int y) {
 
     u_int8_t cr,cg,cb;
 
+    if (x > 64) return {0,0,0};
+    if (y > 64) return {0,0,0};
+
     cr = texture[mapValue][x + y * 64] >> 24 & 0xFF; 
     cg = texture[mapValue][x + y * 64] >> 16 & 0xFF;
     cb = texture[mapValue][x + y * 64] >> 8 & 0xFF;

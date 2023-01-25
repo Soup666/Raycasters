@@ -10,8 +10,8 @@
 #define HEIGHT 640
 #define PI 3.14
 #define DEBUG 0
-#define PHEIGHT 640
-#define PWIDTH 720
+#define PHEIGHT 320
+#define PWIDTH 360
 #define DOF 64
 #define MAPR 64
 #define MAPC 64
@@ -40,6 +40,12 @@ double px, py, pa, projectionDist, pdx, pdy, pSpeed;
 void fixAngle(double &a) {
     if (a < 0) a += 360.0;
     if (a > 360.0) a -= 360.0;
+}
+
+
+double fixAng(double a) {
+    if (a < 0) return a += 360.0;
+    if (a > 360.0) return a -= 360.0;
 }
 
 double degToRad(double a) {
@@ -230,8 +236,13 @@ void drawRay() {
     int mvH, mvV;
 
     for (int r = 0; r<PWIDTH; r++) {
+
+        // Walls
+
         ra += rad;
         fixAngle(ra);
+
+        double height;
 
         if (ra != PI || ra != 0) { 
             double distH = getHorizontalDistance(degToRad(ra), rpH, mvH);
@@ -249,8 +260,8 @@ void drawRay() {
             dist=dist*cos(degToRad(ca));  
 
             if (mode == 0) {
-                double height = 64.0 / dist * projectionDist;
-                if (height > HEIGHT) height = HEIGHT;
+                height = 64.0 / dist * projectionDist;
+                if (height > PHEIGHT) height = PHEIGHT;
 
                 rp = (int)rp % 64;
                 double tStep = 1.0 * texHeight / height;                                                                 //texture step
@@ -269,51 +280,112 @@ void drawRay() {
                     SDL_RenderDrawPoint(renderer, r, startY+h);
                 }
             }
+
+            // Floor
+
+        for (int i = (PHEIGHT/2)+(height/2); i < PHEIGHT; i++) {
+
+            double dr = i - PHEIGHT / 2;
+            double dist = 32 * 277 / dr;
+            double alpha = abs(fixAng(pa - ra));
+            double d = dist / cos(degToRad(alpha));
+            int floorX = px + (d * cos(degToRad(ra)));
+            int floorY = py + (d * sin(degToRad(ra)));
+
+            int textureX = (int)floor(floorX) % 64;
+            int textureY = (int)floor(floorY) % 64;
+
+            double brightness = (1/dist) * 500; if (brightness > 1) brightness = 1; // Fog value here
+
+            array<u_int8_t, 3> pixelValue = textures.textureToWall(2, textureX, textureY);
+            SDL_SetRenderDrawColor(renderer, pixelValue[0] * brightness, pixelValue[1] * brightness, pixelValue[2] * brightness, 255);
+            SDL_RenderDrawPoint(renderer, r, i);
+            SDL_RenderDrawPoint(renderer, r, PHEIGHT-i);
+
+
+
+
+
+            // double ratio = (i-320);
+            // double diagonalDistance = (277 * ratio) * (1/cos(degToRad(ra)));
+
+            // double yEnd = py/2 - sin(degToRad(ra)) * 64 * 64 / ratio / cos(degToRad(fixAng(pa-ra)));
+            // double xEnd = px/2 + cos(degToRad(ra)) * 64 * 64 / ratio / cos(degToRad(fixAng(pa-ra)));
+
+            // cout << "yEnd: " << yEnd << " xEnd: " << xEnd << endl;
+
+            // yEnd += py;
+            // xEnd += px;
+
+            // int cellY = (int)floor(yEnd / 64);
+            // int cellX = (int)floor(xEnd / 64);
+
+
+            // if (cellX < 0 || cellY < 0 || cellX > MAPC || cellY > MAPR) continue;
+
+            // cout << "cellY: " << cellY << " cellX: " << cellX << endl;
+
+
+            // int tileRow = (int)floor((int)yEnd % 8);
+            // int tileColumn = (int)floor((int)xEnd % 8);
+
+            
+            // array<u_int8_t, 3> pixelValue = textures.textureToWall(1, tileRow, tileColumn);
+            // SDL_SetRenderDrawColor(renderer, pixelValue[0], pixelValue[1], pixelValue[2], 255);
+            // SDL_RenderDrawPoint(renderer, r, i);
+            // SDL_RenderDrawPoint(renderer, r, PHEIGHT-i);
+
+
+            // var tileRow = Math.floor(yEnd % this.TILE_SIZE);
+            // var tileColumn = Math.floor(xEnd % this.TILE_SIZE);
+            // // Pixel to draw
+            // var sourceIndex=(tileRow*this.fFloorTextureBuffer.width*bytesPerPixel)+(bytesPerPixel*tileColumn);
+            
+            // // Cheap shading trick
+            // var brighnessLevel=(200/diagonalDistance);
+            // var red=Math.floor(this.fFloorTexturePixels[sourceIndex]*brighnessLevel);
+            // var green=Math.floor(this.fFloorTexturePixels[sourceIndex+1]*brighnessLevel);
+            // var blue=Math.floor(this.fFloorTexturePixels[sourceIndex+2]*brighnessLevel);
+            // var alpha=Math.floor(this.fFloorTexturePixels[sourceIndex+3]);						
+            
+            // // Draw the pixel 
+            // this.offscreenCanvasPixels.data[targetIndex]=red;
+            // this.offscreenCanvasPixels.data[targetIndex+1]=green;
+            // this.offscreenCanvasPixels.data[targetIndex+2]=blue;
+            // this.offscreenCanvasPixels.data[targetIndex+3]=alpha;
+            
+            // // Go to the next pixel (directly under the current pixel)
+            // targetIndex+=(bytesPerPixel*this.offscreenCanvasPixels.width);
+
+        }
             
         }
+
+
+        
+
+        // continue;
+
+        
     }
 
     return;
 }
 
-void drawGrid() {
-
-    // SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-
-    // for (int index = 0; index<MAPR*MAPC; index++) {
-    //     if (room[index] != 1) {
-    //         int x = (index % MAPC) * 64 / mapMultiplier;
-    //         int y = (index / MAPC) * 64 / mapMultiplier;
-    //         SDL_Rect rect = {x,y,mapMultiplier,mapMultiplier};
-    //         SDL_RenderFillRect(renderer, &rect);
-    //     }
-    // }
-    // SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-
-    // for (int x = 0; x < MAPR; x += 1) {
-    //     SDL_RenderDrawLine(renderer, 0, x * mapMultiplier, WIDTH, x * mapMultiplier);
-    // }
-    // for (int y = 0; y < MAPC; y += 1) {
-    //     SDL_RenderDrawLine(renderer, y * mapMultiplier, 0, y * mapMultiplier, HEIGHT);
-    // }
-
-}
-
 // Main Draw Loop
 void display() {
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderClear(renderer);
 
     if (mode == 0) {
 
-        SDL_SetRenderDrawColor(renderer, 25, 25, 50, 255);
+        SDL_SetRenderDrawColor(renderer, 25, 25, 25, 255);
         SDL_Rect floor = {0, PHEIGHT/2, PWIDTH, PHEIGHT};
-        SDL_RenderFillRect(renderer, &floor);
+        // SDL_RenderFillRect(renderer, &floor);
 
         drawRay();
     }
     else if (mode == 1) {
-        // drawGrid();
         editor.drawMap(renderer);
         drawPlayer();
     }
