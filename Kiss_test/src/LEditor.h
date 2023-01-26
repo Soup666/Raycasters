@@ -21,8 +21,7 @@ private:
     array<u_int8_t, ARRAYSIZE> roomTemplate;
     LTextures textures;
 public:
-    LEditor();
-    LEditor(LTextures);
+    LEditor(LTextures textures);
     void loadTemplate(string);
     void saveRoom();
     void debugFile();

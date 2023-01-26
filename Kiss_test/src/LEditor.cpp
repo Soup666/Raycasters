@@ -3,13 +3,8 @@
 
 using namespace std;
 
-LEditor::LEditor() {
-    for (int i = 0; i < ARRAYSIZE; i++) {
-        roomTemplate[i] = 0;
-    }
-}
-
 LEditor::LEditor(LTextures textures) {
+    textures.generateTextures();
     this->textures = textures;
 }
 
@@ -42,7 +37,7 @@ void LEditor::saveRoom() {
 
     ofstream fout;
 
-    fout.open("./bin/file.bin", ios::binary | ios::out);
+    fout.open("file.bin", ios::binary | ios::out);
 
     fout.write((char*) &roomTemplate, sizeof(u_int8_t) * 4096);
 
@@ -88,8 +83,8 @@ void LEditor::drawMap(SDL_Renderer* renderer) {
                 for (int pixelX = 0; pixelX < 8; pixelX++) {
                     for (int pixelY = 0; pixelY < 8; pixelY++) {
                         
-                        SDL_Color pixelValue = textures.textureToWall(mapValue, pixelX * 8, pixelY * 8); // * 8 cause 8x8 = 64 (its 1/8th of the texture size)
-                        SDL_SetRenderDrawColor(renderer, pixelValue.r, pixelValue.g, pixelValue.b, 255);
+                        array<u_int8_t, 3> pixelValue = textures.textureToWall(mapValue, pixelX * 8, pixelY * 8); // * 8 cause 8x8 = 64 (its 1/8th of the texture size)
+                        SDL_SetRenderDrawColor(renderer, pixelValue[0], pixelValue[1], pixelValue[2], 255);
                         SDL_RenderDrawPoint(renderer, i * 8 + pixelX, j * 8 + pixelY);
 
                     }

@@ -3,6 +3,9 @@
 #include <cmath>
 #include <array>
 #include <iostream>
+#include <vector>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 
 #ifndef LTextures_H
 #define LTextures_H
@@ -14,10 +17,19 @@ using namespace std;
 
 class LTextures {
     private:
-        array<array<u_int32_t, 4096>, 8> texture;
+        SDL_Surface* texture[8];
+        SDL_Surface* defaultTex;
+        Uint32 pf;
+        SDL_Renderer *ren;
+        Uint8 *CopySurfacePixels(SDL_Surface *surface, int *width, int *height, int *pitch);
+
     public:
-        void generateTextures();
-        array<u_int8_t, 3> textureToWall(int mapValue, int x, int y);
+        LTextures();
+        LTextures(Uint32 pixelFormat, SDL_Renderer *renderer);
+        // void generateTextures();
+        SDL_Color textureToWall(int mapValue, int x, int y);
+        int getTextureCount();
+
 };
 
 #endif

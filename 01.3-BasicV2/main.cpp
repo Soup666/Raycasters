@@ -1,5 +1,6 @@
 #include <iostream>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <vector>
 #include <cmath>
 #include "./src/LEditor.h"
@@ -10,14 +11,16 @@
 #define HEIGHT 640
 #define PI 3.14
 #define DEBUG 0
-#define PHEIGHT 320
-#define PWIDTH 360
+#define PWIDTH 500
+#define PHEIGHT 500
 #define DOF 64
 #define MAPR 64
 #define MAPC 64
 #define texWidth 64
 #define texHeight 64
 #define mapMultiplier 10
+#define WINDOW_PADDING_WIDTH (WIDTH - PWIDTH) / 2
+#define WINDOW_PADDING_HEIGHT (HEIGHT - PHEIGHT) / 2
 
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
@@ -31,9 +34,11 @@ bool A = false;
 
 int mode = 0;
 
+SDL_Texture *texture = NULL;
+
 array<u_int8_t, 64*64> room;
 LTextures textures;
-LEditor editor(textures);
+LEditor editor;
 
 double px, py, pa, projectionDist, pdx, pdy, pSpeed;
 
@@ -71,7 +76,8 @@ void handleInputs(SDL_Event event) {
                         case SDLK_s: S = true; break;
                         case SDLK_a: A = true; break;
                         case SDLK_d: D = true; break;
-                        case SDLK_LSHIFT: pSpeed = 20; break;
+                        case SDLK_e: editor.saveRoom(); break;
+                        case SDLK_LSHIFT: pSpeed = 40; break;
                         case SDLK_ESCAPE: SDL_DestroyWindow(window); SDL_Quit(); exit(0); break;
                     }
                     break;
@@ -81,7 +87,7 @@ void handleInputs(SDL_Event event) {
                         case SDLK_s: S = false; break;
                         case SDLK_a: A = false; break;
                         case SDLK_d: D = false; break;
-                        case SDLK_LSHIFT: pSpeed = 10; break;
+                        case SDLK_LSHIFT: pSpeed = 20; break;
                         case SDLK_TAB: mode = (mode + 1) % 2; break;
                     }
                     break;
@@ -97,8 +103,8 @@ void handleInputs(SDL_Event event) {
             }
         }
 
-        if(A) {pa-=2; fixAngle(pa); pdx=cos(degToRad(pa)); pdy=-sin(degToRad(pa));}
-        if(D) {pa+=2; fixAngle(pa); pdx=cos(degToRad(pa)); pdy=-sin(degToRad(pa));}
+        if(A) {pa-=8; fixAngle(pa); pdx=cos(degToRad(pa)); pdy=-sin(degToRad(pa));}
+        if(D) {pa+=8; fixAngle(pa); pdx=cos(degToRad(pa)); pdy=-sin(degToRad(pa));}
         if(W) {
             if (room[getMapPos(px+(pdx*pSpeed), py-(pdy*pSpeed))] == 0 ) { px+=(pdx) * pSpeed; py-=(pdy) * pSpeed; }
         }
@@ -106,6 +112,8 @@ void handleInputs(SDL_Event event) {
             if (room[getMapPos(px-(pdx*pSpeed), py+(pdy*pSpeed))] == 0 ) { px-=(pdx) * pSpeed; py+=(pdy) * pSpeed; }
         }
 }
+
+
 
 // Creates the window and renderer
 int createWindow() {
@@ -252,8 +260,8 @@ void drawRay() {
             double rp = rpH;
             int mapV = mvH;
 
-            double brightness = 1.0;
-            if (distV < distH) {dist = distV; rp = rpV; mapV = mvV; brightness = 0.2;}
+            double brightnessM = 1.0;
+            if (distV < distH) {dist = distV; rp = rpV; mapV = mvV; brightnessM = 0.5;}
 
             double ca=pa-ra;
             fixAngle(ca); 
@@ -274,99 +282,37 @@ void drawRay() {
                     int texPos = (rp * 64) + (tStep * h); if (texPos > 4095) texPos = 4095; if (texPos < 0) texPos = 0; // Cap the index for the texture just incase
                     double brightness = (1/dist) * 500; if (brightness > 1) brightness = 1; // Fog value here
 
-                    array<u_int8_t, 3> pixelValue = textures.textureToWall(mapV, rp, tStep * h);
+                    SDL_Color pixelValue = textures.textureToWall(mapV, rp, tStep * h);
 
-                    SDL_SetRenderDrawColor(renderer, pixelValue[0] * brightness, pixelValue[1] * brightness, pixelValue[2] * brightness, 255);
-                    SDL_RenderDrawPoint(renderer, r, startY+h);
+                    SDL_SetRenderDrawColor(renderer, pixelValue.r * brightness * brightnessM, pixelValue.g * brightness * brightnessM, pixelValue.b * brightness * brightnessM, 255);
+                    SDL_RenderDrawPoint(renderer, WINDOW_PADDING_WIDTH + r, WINDOW_PADDING_HEIGHT + startY+h);
                 }
             }
 
             // Floor
 
-        for (int i = (PHEIGHT/2)+(height/2); i < PHEIGHT; i++) {
+            for (int i = (PHEIGHT/2)+(height/2); i < PHEIGHT; i++) {
 
-            double dr = i - PHEIGHT / 2;
-            double dist = 32 * 277 / dr;
-            double alpha = abs(fixAng(pa - ra));
-            double d = dist / cos(degToRad(alpha));
-            int floorX = px + (d * cos(degToRad(ra)));
-            int floorY = py + (d * sin(degToRad(ra)));
+                double dr = i - PHEIGHT / 2;
+                double dist = 32 * 277 / dr;
+                double alpha = abs(fixAng(pa - ra));
+                double d = dist / cos(degToRad(alpha));
+                int floorX = px + (d * cos(degToRad(ra)));
+                int floorY = py + (d * sin(degToRad(ra)));
 
-            int textureX = (int)floor(floorX) % 64;
-            int textureY = (int)floor(floorY) % 64;
+                int textureX = (int)floor(floorX) % 64;
+                int textureY = (int)floor(floorY) % 64;
 
-            double brightness = (1/dist) * 500; if (brightness > 1) brightness = 1; // Fog value here
+                double brightness = (1/dist) * 500; if (brightness > 1) brightness = 1; // Fog value here
 
-            array<u_int8_t, 3> pixelValue = textures.textureToWall(2, textureX, textureY);
-            SDL_SetRenderDrawColor(renderer, pixelValue[0] * brightness, pixelValue[1] * brightness, pixelValue[2] * brightness, 255);
-            SDL_RenderDrawPoint(renderer, r, i);
-            SDL_RenderDrawPoint(renderer, r, PHEIGHT-i);
-
-
-
-
-
-            // double ratio = (i-320);
-            // double diagonalDistance = (277 * ratio) * (1/cos(degToRad(ra)));
-
-            // double yEnd = py/2 - sin(degToRad(ra)) * 64 * 64 / ratio / cos(degToRad(fixAng(pa-ra)));
-            // double xEnd = px/2 + cos(degToRad(ra)) * 64 * 64 / ratio / cos(degToRad(fixAng(pa-ra)));
-
-            // cout << "yEnd: " << yEnd << " xEnd: " << xEnd << endl;
-
-            // yEnd += py;
-            // xEnd += px;
-
-            // int cellY = (int)floor(yEnd / 64);
-            // int cellX = (int)floor(xEnd / 64);
-
-
-            // if (cellX < 0 || cellY < 0 || cellX > MAPC || cellY > MAPR) continue;
-
-            // cout << "cellY: " << cellY << " cellX: " << cellX << endl;
-
-
-            // int tileRow = (int)floor((int)yEnd % 8);
-            // int tileColumn = (int)floor((int)xEnd % 8);
-
-            
-            // array<u_int8_t, 3> pixelValue = textures.textureToWall(1, tileRow, tileColumn);
-            // SDL_SetRenderDrawColor(renderer, pixelValue[0], pixelValue[1], pixelValue[2], 255);
-            // SDL_RenderDrawPoint(renderer, r, i);
-            // SDL_RenderDrawPoint(renderer, r, PHEIGHT-i);
-
-
-            // var tileRow = Math.floor(yEnd % this.TILE_SIZE);
-            // var tileColumn = Math.floor(xEnd % this.TILE_SIZE);
-            // // Pixel to draw
-            // var sourceIndex=(tileRow*this.fFloorTextureBuffer.width*bytesPerPixel)+(bytesPerPixel*tileColumn);
-            
-            // // Cheap shading trick
-            // var brighnessLevel=(200/diagonalDistance);
-            // var red=Math.floor(this.fFloorTexturePixels[sourceIndex]*brighnessLevel);
-            // var green=Math.floor(this.fFloorTexturePixels[sourceIndex+1]*brighnessLevel);
-            // var blue=Math.floor(this.fFloorTexturePixels[sourceIndex+2]*brighnessLevel);
-            // var alpha=Math.floor(this.fFloorTexturePixels[sourceIndex+3]);						
-            
-            // // Draw the pixel 
-            // this.offscreenCanvasPixels.data[targetIndex]=red;
-            // this.offscreenCanvasPixels.data[targetIndex+1]=green;
-            // this.offscreenCanvasPixels.data[targetIndex+2]=blue;
-            // this.offscreenCanvasPixels.data[targetIndex+3]=alpha;
-            
-            // // Go to the next pixel (directly under the current pixel)
-            // targetIndex+=(bytesPerPixel*this.offscreenCanvasPixels.width);
-
+                SDL_Color pixelValue = textures.textureToWall(2, textureX, textureY);
+                SDL_SetRenderDrawColor(renderer, pixelValue.r * brightness, pixelValue.g * brightness, pixelValue.b * brightness, 255);
+                SDL_RenderDrawPoint(renderer, WINDOW_PADDING_WIDTH + r, WINDOW_PADDING_HEIGHT + i);
+                pixelValue = textures.textureToWall(6, textureX, textureY);
+                SDL_SetRenderDrawColor(renderer, pixelValue.r * brightness, pixelValue.g * brightness, pixelValue.b * brightness, 255);
+                SDL_RenderDrawPoint(renderer, WINDOW_PADDING_WIDTH + r, WINDOW_PADDING_HEIGHT + PHEIGHT-i);
+            }
         }
-            
-        }
-
-
-        
-
-        // continue;
-
-        
     }
 
     return;
@@ -374,8 +320,11 @@ void drawRay() {
 
 // Main Draw Loop
 void display() {
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_SetRenderDrawColor(renderer, 150, 100, 200, 255);
     SDL_RenderClear(renderer);
+    // SDL_Surface* loadedSurface = IMG_Load("./assets/texture.png");  
+    // SDL_Texture * texture = SDL_CreateTextureFromSurface(renderer, loadedSurface);        
+    // SDL_RenderCopy(renderer, texture, NULL, NULL);
 
     if (mode == 0) {
 
@@ -396,6 +345,8 @@ void display() {
 // Main loop
 int main(int argc, char *argv[])
 {
+
+    IMG_Init(IMG_INIT_PNG);
     printf("Starting\n");
 
     px = 4*64 - 32;
@@ -403,17 +354,24 @@ int main(int argc, char *argv[])
     pa = 300;
     pdx = 0;
     pdy = 0;
-    pSpeed = 10;
+    pSpeed = 20;
 
-    textures = LTextures();
-    textures.generateTextures();
+    if (createWindow() != 0) return 1;
+
+    Uint32 pf = SDL_GetWindowPixelFormat(window);
+    textures = LTextures(pf, renderer);
+
+    editor = LEditor(textures);
 
     editor.loadTemplate("./bin/file.bin");
     room = editor.getMap();
 
-    projectionDist = (PWIDTH/2) / tan(degToRad(FOV/2));
+    // texture = IMG_LoadTexture(renderer, "./assets/tex1.png");
 
-    if (createWindow() != 0) return 1;
+    // SDL_Surface* surface = SDL_LoadBMP("./assets/tex1.bmp");
+
+
+    projectionDist = (PWIDTH/2) / tan(degToRad(FOV/2));
 
     while (!finished) {
         SDL_Event event;
@@ -422,6 +380,9 @@ int main(int argc, char *argv[])
         display();
 
     }
+
+    IMG_Quit();
+    SDL_Quit();
 
     return 0;
 }
