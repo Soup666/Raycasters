@@ -42,21 +42,32 @@ array<u_int8_t, 64*64> room;
 LTextures textures;
 LEditor editor;
 
-double px, py, pa, projectionDist, pdx, pdy, pSpeed;
+double px, py, projectionDist, pdx, pdy, pSpeed;
+int pa;
+int playerHeight = 32;
+
+double sinTable[360];
+double cosTable[360];
+
+
+void fixAngle(int &a) {
+    if (a < 0) a += 360;
+    if (a > 360) a -= 360;
+}
 
 void fixAngle(double &a) {
     if (a < 0) a += 360.0;
     if (a > 360.0) a -= 360.0;
 }
 
-
-double fixAng(double a) {
-    if (a < 0) return a += 360.0;
-    if (a > 360.0) return a -= 360.0;
+double degToRad(double deg) {
+    return deg * PI / 180;
 }
 
-double degToRad(double a) {
-    return a*(PI/180.0);
+
+int fixAng(int a) {
+    if (a < 0) return a += 360;
+    if (a > 360) return a -= 360;
 }
 
 int getMapPos(double x, double y) {
@@ -105,8 +116,8 @@ void handleInputs(SDL_Event event) {
             }
         }
 
-        if(A) {pa-=8; fixAngle(pa); pdx=cos(degToRad(pa)); pdy=-sin(degToRad(pa));}
-        if(D) {pa+=8; fixAngle(pa); pdx=cos(degToRad(pa)); pdy=-sin(degToRad(pa));}
+        if(A) {pa-=8; fixAngle(pa); pdx=cosTable[pa]; pdy=-sinTable[pa];}
+        if(D) {pa+=8; fixAngle(pa); pdx=cosTable[pa]; pdy=-sinTable[pa];}
         if(W) {
             if (room[getMapPos(px+(pdx*pSpeed), py-(pdy*pSpeed))] == 0 ) { px+=(pdx) * pSpeed; py-=(pdy) * pSpeed; }
         }
@@ -145,7 +156,7 @@ void drawPlayer() {
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_RenderFillRect(renderer, &rect);
 
-    SDL_RenderDrawLine(renderer, screenPx, screenPy, screenPx + 10 * cos(degToRad(pa)), screenPy + 10 * sin(degToRad(pa)));
+    SDL_RenderDrawLine(renderer, screenPx, screenPy, screenPx + 10 * cosTable[pa], screenPy + 10 * sinTable[pa]);
 }
 
 double getHorizontalDistance(double ra, double &rp, int &mv) {
@@ -265,9 +276,9 @@ void drawRay() {
             double brightnessM = 1.0;
             if (distV < distH) {dist = distV; rp = rpV; mapV = mvV; brightnessM = 0.5;}
 
-            double ca=pa-ra;
+            int ca=pa-(int)ra;
             fixAngle(ca); 
-            dist=dist*cos(degToRad(ca));  
+            dist=dist*cosTable[ca];  
 
             if (mode == 0) {
                 height = 64.0 / dist * projectionDist;
@@ -296,7 +307,7 @@ void drawRay() {
             for (int i = (PHEIGHT/2)+(height/2); i < PHEIGHT; i++) {
 
                 double dr = i - PHEIGHT / 2;
-                double dist = 32 * 277 / dr;
+                double dist = playerHeight * 277 / dr;
                 double alpha = abs(fixAng(pa - ra));
                 double d = dist / cos(degToRad(alpha));
                 int floorX = px + (d * cos(degToRad(ra)));
@@ -353,6 +364,12 @@ void display() {
 // Main loop
 int main(int argc, char *argv[])
 {
+
+    // sin and cos tables
+    for (int i = 0; i < 360; i++) {
+        sinTable[i] = sin(degToRad(i));
+        cosTable[i] = cos(degToRad(i));
+    }
 
     IMG_Init(IMG_INIT_PNG);
     printf("Starting\n");
