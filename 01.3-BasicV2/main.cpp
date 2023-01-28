@@ -21,6 +21,7 @@
 #define mapMultiplier 10
 #define WINDOW_PADDING_WIDTH (WIDTH - PWIDTH) / 2
 #define WINDOW_PADDING_HEIGHT (HEIGHT - PHEIGHT) / 2
+#define bobbing (sin(degToRad(SDL_GetTicks64())) * pSpeed * W * 0.5)
 
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
@@ -35,6 +36,7 @@ bool A = false;
 int mode = 0;
 
 SDL_Texture *texture = NULL;
+SDL_Surface *gunTexture;
 
 array<u_int8_t, 64*64> room;
 LTextures textures;
@@ -333,6 +335,12 @@ void display() {
         // SDL_RenderFillRect(renderer, &floor);
 
         drawRay();
+
+        SDL_Texture * texture = SDL_CreateTextureFromSurface(renderer, gunTexture);  
+        SDL_Rect rect = {WINDOW_PADDING_WIDTH + (PWIDTH/2) - 77, WINDOW_PADDING_HEIGHT + PHEIGHT - 200 + bobbing, 144, 200};      
+        SDL_RenderCopy(renderer, texture, NULL, &rect);
+
+
     }
     else if (mode == 1) {
         editor.drawMap(renderer);
@@ -365,6 +373,8 @@ int main(int argc, char *argv[])
 
     editor.loadTemplate("./bin/file.bin");
     room = editor.getMap();
+
+    gunTexture = SDL_LoadBMP("./assets/gun1.bmp");
 
     // texture = IMG_LoadTexture(renderer, "./assets/tex1.png");
 
