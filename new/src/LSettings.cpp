@@ -12,14 +12,28 @@ std::map<std::string, int> LSettings::iSettings = {
     {"texWidth", 64},
     {"texHeight", 64},
     {"mapMultiplier", 10},
-    {"WINDOW_PADDING_WIDTH", (720 - 500) / 2},
-    {"WINDOW_PADDING_HEIGHT", (640 - 500) / 2}
+    {"WINDOW_PADDING_WIDTH", 110},
+    {"WINDOW_PADDING_HEIGHT", 60}
 };
 
 std::map<std::string, double> LSettings::dSettings = {
     {"FOV", 60.0},
     {"bobbing", 0.0}
 };
+
+double FOV = 60.0;
+
+int WIDTH = 720;
+int HEIGHT = 640;
+int DEBUG = 0;
+int PWIDTH = 500;
+int PHEIGHT = 500;
+int DOF = 64;
+int MAPR = 64;
+int MAPC = 64;
+int mapMultiplier = 10;
+int WINDOW_PADDING_WIDTH = 110;
+int WINDOW_PADDING_HEIGHT = 60;
 
 LSettings::LSettings() {
 
@@ -54,6 +68,11 @@ double LSettings::getDSetting(std::string name) {
 double degToRad(int deg)
 {
     return deg * (M_PI / 180);
+}
+
+double degToRad(double deg)
+{
+    return deg * (M_PI / 180.0);
 }
 
 

@@ -8,13 +8,12 @@ LGameManager::LGameManager()
 
 int LGameManager::getMapPos(double x, double y) {
 
-    int MAPC = LSettings::getISetting("MAPC");
     return((int)floor(x/64) % MAPC + (MAPC*((int)floor(y / 64))));
 }
 
 // Creates the window and renderer
 int LGameManager::createWindow() {
-    window = SDL_CreateWindow("SDL2 Window", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, LSettings::getISetting("WIDTH"), LSettings::getISetting("HEIGHT"), SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow("SDL2 Window", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
     if (window == NULL)
     {
         printf("Could not create window: %s", SDL_GetError());
@@ -84,13 +83,13 @@ void LGameManager::Render()
     if (mode == 0) {
 
         SDL_SetRenderDrawColor(renderer, 25, 25, 25, 255);
-        SDL_Rect floor = {0, LSettings::getISetting("PHEIGHT")/2, LSettings::getISetting("PWIDTH"), LSettings::getISetting("PHEIGHT")};
+        SDL_Rect floor = {0, PHEIGHT/2, PWIDTH, PHEIGHT};
         // SDL_RenderFillRect(renderer, &floor);
 
         drawRays();
 
         SDL_Texture * texture = SDL_CreateTextureFromSurface(renderer, gunTexture);  
-        SDL_Rect rect = {LSettings::getISetting("WINDOW_PADDING_WIDTH") + (LSettings::getISetting("PWIDTH")/2) - 77, LSettings::getISetting("WINDOW_PADDING_HEIGHT") + LSettings::getISetting("PHEIGHT") - 200, 144, 200};      
+        SDL_Rect rect = {WINDOW_PADDING_WIDTH + (PWIDTH/2) - 77, WINDOW_PADDING_HEIGHT + PHEIGHT - 200, 144, 200};      
         SDL_RenderCopy(renderer, texture, NULL, &rect);
 
 
@@ -166,6 +165,16 @@ void LGameManager::handleInputs(SDL_Event event)
                 ] == 0 ) { player.moveX(-(player.getDeltaX()) * player.getSpeed()); 
                            player.moveY((player.getDeltaY()) * player.getSpeed()); }
         }
+
+
+//         if(A) {pa-=8; fixAngle(pa); pdx=cosTable[pa]; pdy=-sinTable[pa];}
+//         if(D) {pa+=8; fixAngle(pa); pdx=cosTable[pa]; pdy=-sinTable[pa];}
+//         if(W) {
+//             if (room[getMapPos(px+(pdx*pSpeed), py-(pdy*pSpeed))] == 0 ) { px+=(pdx) * pSpeed; py-=(pdy) * pSpeed; }
+//         }
+//         if(S) {
+//             if (room[getMapPos(px-(pdx*pSpeed), py+(pdy*pSpeed))] == 0 ) { px-=(pdx) * pSpeed; py+=(pdy) * pSpeed; }
+//         }
 }
 
 bool LGameManager::isFinished()
@@ -175,12 +184,12 @@ bool LGameManager::isFinished()
 
 double LGameManager::getHorizontalDistance(double ra, double &rp, int &mv) {
         
-    double Ay = floor(player.getPlayerY()/64) * 64;
+    double Ay = floor(player.getPlayerY()/64.0) * 64.0;
     if (ra >= M_PI) Ay -= 0.1; // Looking down
     else Ay += 64; // Looking up
 
     double Ax = player.getPlayerX() + (player.getPlayerY()-Ay) / -tan(ra);
-    if (Ax > 64*LSettings::getISetting("DOF") || Ax < 0 || Ay > 64*LSettings::getISetting("DOF")  || Ay < 0) return 9999.0; // Out of bounds
+    if (Ax > 64*DOF || Ax < 0 || Ay > 64*DOF  || Ay < 0) return 9999.0; // Out of bounds
     
     double dy = 64.0;
     double dx = 64/tan(ra);
@@ -191,14 +200,19 @@ double LGameManager::getHorizontalDistance(double ra, double &rp, int &mv) {
 
     if (mode == 1) SDL_RenderDrawPoint(renderer, rx, ry);
 
-    for (int i=0; i<LSettings::getISetting("DOF"); i++) {
+    // std::cout << "ra: " << ra << std::endl;
 
-        if (rx > 64*LSettings::getISetting("DOF") || ry > 64*LSettings::getISetting("DOF") || rx < 0 || ry < 0) return 999999.0;
+    for (int i=0; i<DOF; i++) {
+
+        // std::cout << "Wall at " << rx << ", " << ry << std::endl;
+
+        if (rx > 64*DOF || ry > 64*DOF || rx < 0 || ry < 0) return 999999.0;
 
         if (mode == 1) SDL_RenderDrawPoint(renderer, rx, ry);
 
-        int pos = ((int)floor(rx/64) % LSettings::getISetting("MAPC") + (LSettings::getISetting("MAPC")*((int)floor(ry / 64))));
+        int pos = ((int)floor(rx/64) % MAPC + (MAPC*((int)floor(ry / 64))));
         if (room[pos] != 0) {
+            // std::cout << "Distance: " << sqrt(pow(rx-player.getPlayerX(), 2) + pow(ry-player.getPlayerY(), 2)) << std::endl;
             SDL_Rect rect = {(int)(floor(rx/64) * 64), floor(ry/64) * 64, 64, 64};
             if (mode == 1) SDL_RenderFillRect(renderer, &rect);
             // return abs(ry-py) / sin(ra);
@@ -232,13 +246,13 @@ double LGameManager::getVerticalDistance(double ra, double &rp, int &mv) {
 
     if (mode == 1) SDL_RenderDrawPoint(renderer, rx, ry);
 
-    for (int i=0; i<LSettings::getISetting("DOF"); i++) {
+    for (int i=0; i<DOF; i++) {
 
-        if (rx > 64*LSettings::getISetting("DOF") || ry > 64*LSettings::getISetting("DOF") || rx < 0 || ry < 0) return 999999.0;
+        if (rx > 64*DOF || ry > 64*DOF || rx < 0 || ry < 0) return 999999.0;
 
         if (mode == 1) SDL_RenderDrawPoint(renderer, rx, ry);
 
-        int pos = ((int)floor(rx/64) % LSettings::getISetting("MAPC") + (LSettings::getISetting("MAPC")*((int)floor(ry / 64))));
+        int pos = ((int)floor(rx/64) % MAPC + (MAPC*((int)floor(ry / 64))));
         if (room[pos] != 0) {
             SDL_Rect rect = {(int)(floor(rx/64) * 64), floor(ry/64) * 64, 64, 64};
             if (mode == 1) SDL_RenderFillRect(renderer, &rect);
@@ -259,12 +273,19 @@ double LGameManager::getVerticalDistance(double ra, double &rp, int &mv) {
 void LGameManager::drawRays() {
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    double rad = LSettings::getDSetting("FOV") / LSettings::getISetting("PWIDTH");
-    double ra = player.getRotation() - (LSettings::getISetting("FOV")/2);
+    double rad = FOV / PWIDTH;
+    double ra = (double)(player.getRotation()) - (FOV/2);
     double rpH, rpV;
     int mvH, mvV;
 
-    for (int r = 0; r<LSettings::getISetting("PWIDTH"); r++) {
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    for (int r = 0; r<PWIDTH; r += 2) {
+
+        SDL_RenderDrawPoint(renderer, 110 + r, 450);
+    }
+
+    for (int r = 0; r<PWIDTH; r++) {
+                
 
         // Walls
 
@@ -290,13 +311,13 @@ void LGameManager::drawRays() {
 
             if (mode == 0) {
                 height = 64.0 / dist * player.getProjectionDist();
-                if (height > LSettings::getISetting("PHEIGHT")) height = LSettings::getISetting("PHEIGHT");
+                if (height > PHEIGHT) height = PHEIGHT;
 
                 rp = (int)rp % 64;
                 double tStep = 1.0 * texHeight / height;                                                                 //texture step
                 u_int8_t cr,cg,cb;
 
-                int startY = (LSettings::getISetting("PHEIGHT")/2)-(height/2);
+                int startY = (PHEIGHT/2)-(height/2);
 
                 for (int h=0; h<height;h++) {
 
@@ -306,15 +327,15 @@ void LGameManager::drawRays() {
                     SDL_Color pixelValue = textures.textureToWall(mapV, rp, tStep * h);
 
                     SDL_SetRenderDrawColor(renderer, pixelValue.r * brightness * brightnessM, pixelValue.g * brightness * brightnessM, pixelValue.b * brightness * brightnessM, 255);
-                    SDL_RenderDrawPoint(renderer, LSettings::getISetting("WINDOW_PADDING_WIDTH") + r, LSettings::getISetting("WINDOW_PADDING_HEIGHT") + startY+h);
+                    SDL_RenderDrawPoint(renderer, WINDOW_PADDING_WIDTH + r, WINDOW_PADDING_HEIGHT + startY+h);
                 }
             }
 
             // Floor
 
-            for (int i = (LSettings::getISetting("PHEIGHT")/2)+(height/2); i < LSettings::getISetting("PHEIGHT"); i++) {
+            for (int i = (PHEIGHT/2)+(height/2); i < PHEIGHT; i++) {
 
-                double dr = i - LSettings::getISetting("PHEIGHT") / 2;
+                double dr = i - PHEIGHT / 2;
                 double dist = player.getHeight() * 277 / dr;
                 int ang = player.getRotation()-ra;
                 fixAngle(ang);
@@ -330,10 +351,10 @@ void LGameManager::drawRays() {
 
                 SDL_Color pixelValue = textures.textureToWall(2, textureX, textureY);
                 SDL_SetRenderDrawColor(renderer, pixelValue.r * brightness, pixelValue.g * brightness, pixelValue.b * brightness, 255);
-                SDL_RenderDrawPoint(renderer, LSettings::getISetting("WINDOW_PADDING_WIDTH") + r, LSettings::getISetting("WINDOW_PADDING_HEIGHT") + i);
+                SDL_RenderDrawPoint(renderer, WINDOW_PADDING_WIDTH + r, WINDOW_PADDING_HEIGHT + i);
                 pixelValue = textures.textureToWall(6, textureX, textureY);
                 SDL_SetRenderDrawColor(renderer, pixelValue.r * brightness, pixelValue.g * brightness, pixelValue.b * brightness, 255);
-                SDL_RenderDrawPoint(renderer, LSettings::getISetting("WINDOW_PADDING_WIDTH") + r, LSettings::getISetting("WINDOW_PADDING_HEIGHT") + LSettings::getISetting("PHEIGHT")-i);
+                SDL_RenderDrawPoint(renderer, WINDOW_PADDING_WIDTH + r, WINDOW_PADDING_HEIGHT + PHEIGHT-i);
             }
         }
     }

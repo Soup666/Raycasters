@@ -24,5 +24,19 @@ private:
 extern void fixAngle(int &a);
 extern void fixAngle(double &a);
 extern double degToRad(int deg);
+extern double degToRad(double deg);
+
+extern double FOV;
+extern int WIDTH;
+extern int HEIGHT;
+extern int DEBUG;
+extern int PWIDTH;
+extern int PHEIGHT;
+extern int DOF;
+extern int MAPR;
+extern int MAPC;
+extern int mapMultiplier;
+extern int WINDOW_PADDING_WIDTH;
+extern int WINDOW_PADDING_HEIGHT;
 
 #endif

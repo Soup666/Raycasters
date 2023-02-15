@@ -152,7 +152,20 @@ Uint8 *LTextures::CopySurfacePixels(
 SDL_Color LTextures::textureToWall(int mapValue, int x, int y)
 {
 
-  int bpp = texture[mapValue]->format->BytesPerPixel;
+  int bpp = 3;
+  try
+  {
+    SDL_PixelFormat *fmt = texture[mapValue]->format;
+    bpp = fmt->BytesPerPixel;  
+
+  }
+  catch(const std::exception& e)
+  {
+    std::cerr << e.what() << '\n';
+  }
+  
+
+  // int bpp = texture[mapValue]->format->BytesPerPixel;
   /* Here p is the address to the pixel we want to retrieve */
   Uint8 *p = (Uint8 *)texture[mapValue]->pixels + y * texture[mapValue]->pitch + x * bpp;
 
