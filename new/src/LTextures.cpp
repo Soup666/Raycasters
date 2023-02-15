@@ -165,7 +165,6 @@ SDL_Color LTextures::textureToWall(int mapValue, int x, int y)
   }
   
 
-  // int bpp = texture[mapValue]->format->BytesPerPixel;
   /* Here p is the address to the pixel we want to retrieve */
   Uint8 *p = (Uint8 *)texture[mapValue]->pixels + y * texture[mapValue]->pitch + x * bpp;
 

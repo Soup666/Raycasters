@@ -17,8 +17,6 @@ private:
     static std::map<std::string, double> dSettings;
     static void addISetting(std::string name, int value);
     static void addDSetting(std::string name, double value);
-
-
 };
 
 extern void fixAngle(int &a);

@@ -37,24 +37,6 @@ int WINDOW_PADDING_HEIGHT = 60;
 
 LSettings::LSettings() {
 
-    // LSettings::addDSetting("FOV", 60.0);
-    // // dSettings["bobbing"] = (sin(degToRad(SDL_GetTicks64())) * pSpeed * W * 0.5);
-    // LSettings::addDSetting("bobbing",  0.0);
-
-    // LSettings::addISetting("WIDTH", 720);
-    // LSettings::addISetting("HEIGHT", 640);
-    // LSettings::addISetting("DEBUG", 0);
-    // LSettings::addISetting("PWIDTH", 500);
-    // LSettings::addISetting("PHEIGHT", 500);
-    // LSettings::addISetting("DOF", 64);
-    // LSettings::addISetting("MAPR", 64);
-    // LSettings::addISetting("MAPC", 64);
-    // LSettings::addISetting("texWidth", 64);
-    // LSettings::addISetting("texHeight", 64);
-    // LSettings::addISetting("mapMultiplier", 10);
-    // LSettings::addISetting("WINDOW_PADDING_WIDTH", (720 - 500) / 2);
-    // LSettings::addISetting("WINDOW_PADDING_HEIGHT", (640 - 500) / 2);
-
 };
 
 int LSettings::getISetting(std::string name) {
