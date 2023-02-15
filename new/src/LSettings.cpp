@@ -1,3 +1,8 @@
+/*
+    Defines some global functions to do with deg and rad.
+    Also stores global variables used.
+*/
+
 #include "LSettings.h"
 
 std::map<std::string, int> LSettings::iSettings = {

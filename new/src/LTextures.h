@@ -1,3 +1,6 @@
+/*
+    Outlines the Textures class.
+*/
 
 #include <vector>
 #include <cmath>

@@ -1,10 +1,12 @@
+/*
+    Main game manager class.
+    Handles all game logic and rendering the screen.
+    The bulk of the raycasters code is here.
+*/
+
 #include "LGameManager.h"
 
-LGameManager::LGameManager()
-{
-    
-}
-
+LGameManager::LGameManager() {}
 
 int LGameManager::getMapPos(double x, double y) {
 
@@ -30,9 +32,7 @@ int LGameManager::createWindow() {
     return 0;
 }
 
-LGameManager::~LGameManager()
-{
-}
+LGameManager::~LGameManager() {}
 
 void LGameManager::Init()
 {

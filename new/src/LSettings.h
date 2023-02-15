@@ -1,3 +1,7 @@
+/*
+    Outlines the Settings Class and global functions used.
+*/
+
 #ifndef LSettings_h
 #define LSettings_h
 

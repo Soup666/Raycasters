@@ -16,20 +16,16 @@ int mode = 0;
 int main(int argc, char *argv[])
 {
 
+    // Game Manager is used to hanlde everything graphically and inputs
     gameManager = LGameManager();
-    gameManager.Init();
+    gameManager.Init(); // Initialize the game manager
 
     printf("Starting\n");
 
-
     // Main Game Loop
-    while (!gameManager.isFinished()) {
+    while (!gameManager.isFinished()) {  gameManager.Update();  }
 
-        gameManager.Update();
-
-    }
-
-    gameManager.CleanUp();
+    gameManager.CleanUp(); // Clean up the game manager
 
     return 0;
 }

@@ -1,3 +1,7 @@
+/*
+    Outlines the Game Manager class
+*/
+
 #ifndef LGameManager_h
 #define LGameManager_h
 

@@ -1,3 +1,7 @@
+/*
+    Defines the update loop for the player, ran every frame.
+*/
+
 #include "LPlayer.h"
 
 LPlayer::LPlayer()

@@ -1,3 +1,6 @@
+/*
+  Handles loading textures and getting pixel colors from coords.
+*/
 
 #include "LTextures.h"
 

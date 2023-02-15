@@ -1,3 +1,7 @@
+/*
+    Handles the topdown 2d editor.
+    Access it with tab.
+*/
 
 #include "LEditor.h"
 

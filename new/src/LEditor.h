@@ -1,3 +1,8 @@
+/*
+    Outlines the Editor class.
+    TODO: Remove the #define MAPSIZE 64 and ARRAYSIZE 4096 and replace with a settings.
+*/
+
 #include <iostream>
 #include <fstream>
 #include <vector>

@@ -1,3 +1,7 @@
+/*
+    Stores the player's position, rotation, and speed.
+*/
+
 #ifndef LPlayer_h
 #define LPlayer_h
 
